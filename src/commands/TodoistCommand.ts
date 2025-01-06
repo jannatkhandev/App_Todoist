@@ -79,8 +79,14 @@ export class TodoistCommand implements ISlashCommand {
   ): Promise<void> {
     const text = `Todoist App provides you the following slash commands, /todoist:
 
-    1) *help:* shows this list.
-    2) *auth:* starts the process to authorize your Todoist Account.
+    1) \`help:\` shows this list.
+    2) \`auth:\` starts the process to authorize your Todoist Account.
+    3) \`task:\` opens modal to create a new task.
+    4) \`projects:\` fetches the projects you are part of.
+    5) \`tasks:\` fetches the active tasks.
+    6) \`sections:\` fetches the active tasks.
+    7) \`labels:\` fetches your personal labels.
+    8) \`shared-labels:\` fetches your shared labels.
 `;
 
     return sendNotification(read, modify, user, room, text);
