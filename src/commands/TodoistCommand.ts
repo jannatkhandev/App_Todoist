@@ -13,6 +13,7 @@ import { labels } from './subcommands/labels';
 import { projects } from './subcommands/projects';
 import { sections } from './subcommands/sections';
 import { sharedLabels } from './subcommands/sharedLabels';
+import { task } from './subcommands/task';
 import { tasks } from './subcommands/tasks';
 
 export class TodoistCommand implements ISlashCommand {
@@ -44,6 +45,9 @@ export class TodoistCommand implements ISlashCommand {
         break;
       case 'projects':
         await projects(this.app, read, modify, context, persistence);
+        break;
+      case 'task':
+        await task(this.app, read, modify, context, persistence);
         break;
       case 'tasks':
         await tasks(this.app, read, modify, context, persistence);

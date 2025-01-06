@@ -29,23 +29,11 @@ export async function getComments(
   const itemId = context.getInteractionData().value;
   const blockId = context.getInteractionData().blockId;
 
-  // Determine if we're getting comments for a project or task
   const isProject = blockId.includes('project');
 
-  // Debug logging
   const url = getCommentsUrl(isProject ? undefined : itemId, isProject ? itemId : undefined);
-  app.getLogger().info('Request URL:', url);
-  app.getLogger().info('Is Project:', isProject);
-  app.getLogger().info('Item ID:', itemId);
 
   const response = await app.getHttpHelperInstance().get(user, url);
-
-  // Debug logging
-  app.getLogger().info('Response:', {
-    statusCode: response.statusCode,
-    data: response.data,
-    headers: response.headers,
-  });
 
   if (response.statusCode === HttpStatusCode.OK) {
     if (!response.data || response.data.length === 0) {

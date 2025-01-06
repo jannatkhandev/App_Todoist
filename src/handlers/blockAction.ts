@@ -15,6 +15,7 @@ import { shareComment } from '../lib/share/shareComment';
 import { shareProject } from '../lib/share/shareProject';
 import { shareSection } from '../lib/share/shareSection';
 import { shareTask } from '../lib/share/shareTask';
+import { createTaskModal } from '../modals/createTaskModal';
 
 export class ExecuteBlockActionHandler {
   constructor(
@@ -35,13 +36,15 @@ export class ExecuteBlockActionHandler {
     slashcommandcontext?: SlashCommandContext,
     uikitcontext?: UIKitInteractionContext
   ): Promise<IUIKitResponse> {
-    const triggerId = context.getInteractionData().triggerId;
     const data = context.getInteractionData();
-    const { actionId, user } = data;
-    const room = context.getInteractionData().room;
+    const { actionId, user, triggerId, room } = data;
 
     try {
       switch (actionId) {
+        case MiscEnum.CREATE_TASK_IN_PROJECT_BUTTON_ACTION_ID:
+          const modal = await createTaskModal({ projectId: data.value, roomId: room!.id });
+          await modify.getUiController().openSurfaceView(modal, { triggerId }, user);
+          return context.getInteractionResponder().successResponse();
         case MiscEnum.SHARE_PROJECT_ACTION_ID:
           await shareProject({ app, context, data, room, read, persistence, modify });
           return context.getInteractionResponder().successResponse();

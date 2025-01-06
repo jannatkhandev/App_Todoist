@@ -1,4 +1,3 @@
-import { ButtonStyle } from '@rocket.chat/apps-engine/definition/uikit';
 import {
   ActionsBlock,
   ButtonElement,
@@ -6,8 +5,11 @@ import {
   DividerBlock,
   InputBlock,
   Option,
+  PlainTextInputElement,
   SectionBlock,
   StaticSelectElement,
+  ToggleSwitchElement,
+  UsersSelectElement,
 } from '@rocket.chat/ui-kit';
 
 import { AppEnum } from '../enums/App';
@@ -17,29 +19,75 @@ export async function getInputBox(
   placeholderText: string,
   blockId: string,
   actionId: string,
-  initialValue?: string,
-  multiline?: boolean
+  type:
+    | 'channels_select'
+    | 'conversations_select'
+    | 'datepicker'
+    | 'linear_scale'
+    | 'multi_channels_select'
+    | 'multi_conversations_select'
+    | 'multi_static_select'
+    | 'multi_users_select'
+    | 'plain_text_input'
+    | 'static_select'
+    | 'users_select'
+    | 'checkbox'
+    | 'radio_button'
+    | 'time_picker'
+    | 'toggle_switch' = 'plain_text_input',
+  options: {
+    initialValue?: string;
+    multiline?: boolean;
+    initialDate?: string;
+    options?: Array<{ text: string; value: string }>;
+    minValue?: number;
+    maxValue?: number;
+  } = {}
 ): Promise<InputBlock> {
-  const block: InputBlock = {
+  const baseElement = {
+    placeholder: {
+      type: 'plain_text' as const,
+      text: placeholderText,
+    },
+    appId: AppEnum.APP_ID,
+    blockId,
+    actionId,
+  };
+
+  let element: InputBlock['element'];
+
+  switch (type) {
+    case 'plain_text_input':
+      element = {
+        ...baseElement,
+        type,
+        initialValue: options?.initialValue,
+        multiline: options?.multiline,
+      } as PlainTextInputElement;
+      break;
+
+    case 'users_select':
+      element = {
+        ...baseElement,
+        type,
+      } as UsersSelectElement;
+      break;
+
+    default:
+      element = {
+        ...baseElement,
+        type,
+      } as InputBlock['element'];
+  }
+
+  return {
     type: 'input',
     label: {
       type: 'plain_text',
       text: labelText,
     },
-    element: {
-      type: 'plain_text_input',
-      placeholder: {
-        type: 'plain_text',
-        text: placeholderText,
-      },
-      appId: AppEnum.APP_ID,
-      blockId: blockId,
-      actionId: actionId,
-      initialValue: initialValue,
-      multiline: multiline,
-    },
+    element,
   };
-  return block;
 }
 
 export async function getInputBoxDate(
@@ -158,7 +206,7 @@ export async function getOptions(text: string, value: string): Promise<Option> {
 
 export async function getActionsBlock(
   blockId: string,
-  elements: Array<ButtonElement> | Array<StaticSelectElement>
+  elements: Array<ButtonElement> | Array<StaticSelectElement> | Array<ToggleSwitchElement>
 ): Promise<ActionsBlock> {
   const block: ActionsBlock = {
     type: 'actions',
@@ -166,4 +214,30 @@ export async function getActionsBlock(
     elements: elements,
   };
   return block;
+}
+
+export async function createToggleButton(
+  labelText: string,
+  blockId: string,
+  actionId: string,
+  options: Array<{ text: string; value: string }>
+): Promise<InputBlock> {
+  return {
+    type: 'input',
+    label: {
+      type: 'plain_text',
+      text: labelText,
+    },
+    element: {
+      type: 'toggle_switch',
+      options: options.map((opt) => ({
+        text: { type: 'plain_text', text: opt.text },
+        value: opt.value,
+      })),
+      initialOptions: [],
+      appId: AppEnum.APP_ID,
+      blockId,
+      actionId,
+    } as ToggleSwitchElement,
+  };
 }

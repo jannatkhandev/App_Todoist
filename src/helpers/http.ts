@@ -36,7 +36,7 @@ export class HttpHelper {
         ...options,
         headers,
       };
-
+      this.app.getLogger().info(requestOptions);
       switch (method) {
         case 'GET':
           return await this.http.get(url, requestOptions);

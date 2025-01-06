@@ -2,8 +2,6 @@ import { getProjectUrl } from '../../helpers/const';
 import { shareItem } from './shareItem';
 
 export async function shareProject(params) {
-  console.log('getting in shareproject');
-  console.log(params);
   return shareItem({
     ...params,
     getUrl: getProjectUrl,

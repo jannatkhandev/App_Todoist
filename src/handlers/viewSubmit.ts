@@ -7,6 +7,7 @@ import {
 
 import { TodoistApp } from '../../TodoistApp';
 import { ModalsEnum } from '../enums/Modals';
+import { createTask } from '../lib/create/createTask';
 import { deleteComment, deleteLabel, deleteSection, deleteTask } from '../lib/delete/deleteItem';
 
 export class ExecuteViewSubmitHandler {
@@ -33,10 +34,11 @@ export class ExecuteViewSubmitHandler {
     const elements = view.id.split('#');
     const viewId = elements[0];
     const roomId = elements[1];
+    if (!room) room = await read.getRoomReader().getById(roomId);
     try {
       switch (viewId) {
         case ModalsEnum.CREATE_TASK:
-          // await postTask({context,data,room,read,persistence,modify,http});
+          await createTask({ app, context, data, room, read, persistence, modify, http });
           return context.getInteractionResponder().successResponse();
         case ModalsEnum.DELETE_TASK:
           await deleteTask({ app, context, data, room, read, persistence, modify, roomId });
