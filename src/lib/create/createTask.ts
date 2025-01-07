@@ -33,7 +33,6 @@ export async function createTask({
   modify: IModify;
   http: IHttp;
 }) {
-  const logger = app.getLogger();
   const state = data.view.state;
   const user: IUser = context.getInteractionData().user;
   const project_id = state?.[ModalsEnum.PROJECT_ID_BLOCK]?.[ModalsEnum.PROJECT_ID_INPUT];
@@ -48,7 +47,7 @@ export async function createTask({
   );
   //   const notifyUser = state?.[ModalsEnum.ASSIGNEE_NOTIFY_BLOCK]?.[ModalsEnum.ASSIGNEE_NOTIFY_ACTION_ID] == "Yes" ? "true" : "false";
   //   const assignee = state?.[ModalsEnum.TASK_ASSIGNEES_BLOCK]?.[ModalsEnum.TASK_ASSIGNEES_INPUT];
-  logger.info(project_id);
+
   const body = {
     content: `${taskName}`,
     description: `${taskDescription}`,
@@ -60,16 +59,15 @@ export async function createTask({
   };
 
   const url = getTasksUrl();
-  logger.info(url);
-  logger.info(body);
+
   const response = await app.getHttpHelperInstance().post(user, url, { data: body });
-  logger.info(response.data);
+
   if (response.statusCode === HttpStatusCode.OK) {
     const msg = modify
       .getCreator()
       .startMessage()
       .setText(
-        `✅️ Task created successfully! \n You may access it at [${taskName}](${response.data.url})`
+        `✅️ Task created successfully! \n Task: [${taskName}](${response.data.url}) | When: ${response.data.due.string}`
       )
       .setRoom(room!);
     await modify.getNotifier().notifyUser(user, msg.getMessage());

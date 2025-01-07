@@ -16,9 +16,11 @@ import {
 export async function createTaskModal({
   roomId,
   projectId,
+  descriptionText,
 }: {
   roomId: string;
   projectId?: string;
+  descriptionText?: string;
 }): Promise<IUIKitSurfaceViewParam> {
   const viewId = ModalsEnum.CREATE_TASK + `#${roomId}`;
   const block: LayoutBlock[] = [];
@@ -62,7 +64,9 @@ export async function createTaskModal({
     ModalsEnum.TASK_DESCRIPTION_INPUT_LABEL,
     ModalsEnum.TASK_DESCRIPTION_INPUT_LABEL_DEFAULT,
     ModalsEnum.TASK_DESCRIPTION_BLOCK,
-    ModalsEnum.TASK_DESCRIPTION_INPUT
+    ModalsEnum.TASK_DESCRIPTION_INPUT,
+    undefined,
+    { initialValue: descriptionText ?? '', multiline: true }
   );
 
   let taskDueDateInputBox = await getInputBoxDate(

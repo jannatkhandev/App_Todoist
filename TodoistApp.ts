@@ -1,16 +1,18 @@
-import { HttpStatusCode, IAppAccessors, IAppInstallationContext, IConfigurationExtend, IHttp, ILogger, IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
+import { IAppAccessors, IAppInstallationContext, IConfigurationExtend, IHttp, ILogger, IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { App } from '@rocket.chat/apps-engine/definition/App';
 import { IAppInfo } from '@rocket.chat/apps-engine/definition/metadata';
 import { IAuthData, IOAuth2Client, IOAuth2ClientOptions } from '@rocket.chat/apps-engine/definition/oauth2/IOAuth2';
 import { createOAuth2Client } from '@rocket.chat/apps-engine/definition/oauth2/OAuth2';
-import { IRoom, RoomType } from '@rocket.chat/apps-engine/definition/rooms';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
 import { isUserHighHierarchy, sendDirectMessage } from './src/helpers/message';
 import { TodoistCommand } from './src/commands/TodoistCommand';
 import { HttpHelper } from './src/helpers/http';
-import { IUIKitResponse, UIKitBlockInteractionContext, UIKitViewSubmitInteractionContext } from '@rocket.chat/apps-engine/definition/uikit';
-import { ExecuteBlockActionHandler } from './src/handlers/blockAction';
-import { ExecuteViewSubmitHandler } from './src/handlers/viewSubmit';
+import { IUIKitResponse, UIKitActionButtonInteractionContext, UIKitBlockInteractionContext, UIKitViewSubmitInteractionContext } from '@rocket.chat/apps-engine/definition/uikit';
+import { ExecuteBlockActionHandler } from './src/handlers/blockInteraction';
+import { ExecuteViewSubmitHandler } from './src/handlers/viewSubmitInteraction';
+import { ExecuteActionButtonHandler } from './src/handlers/actionButtonInteraction';
+import { UIActionButtonContext } from '@rocket.chat/apps-engine/definition/ui';
+import { MiscEnum } from './src/enums/Misc';
 
 export class TodoistApp extends App {
     public botUsername: string;
@@ -77,10 +79,20 @@ export class TodoistApp extends App {
         const handler = new ExecuteViewSubmitHandler(this, read, http, modify, persistence);
         return await handler.run(this, context, read, http, persistence, modify);
       }
-    
 
-    protected async extendConfiguration(configuration: IConfigurationExtend): Promise<void> {    
+    public async executeActionButtonHandler(context: UIKitActionButtonInteractionContext, read: IRead, http: IHttp, persistence: IPersistence, modify: IModify): Promise<IUIKitResponse> {
+        const handler = new ExecuteActionButtonHandler(this, read, http, modify, persistence);
+        return await handler.run(context);
+    }
+
+
+    public async extendConfiguration(configuration: IConfigurationExtend): Promise<void> {    
         await Promise.all([this.getOauth2ClientInstance().setup(configuration), configuration.slashCommands.provideSlashCommand(new TodoistCommand(this))]);
+        configuration.ui.registerButton({
+			actionId: MiscEnum.CREATE_TASK_FROM_MESSAGE_BUTTON_ACTION_ID,
+			labelI18n: MiscEnum.CREATE_TASK_FROM_MESSAGE_BUTTON,
+			context: UIActionButtonContext.MESSAGE_ACTION,
+		});
     }
 
 }
