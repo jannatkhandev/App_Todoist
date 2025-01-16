@@ -1,4 +1,4 @@
-import { IHttp, IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
+import { IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import {
   IUIKitResponse,
   UIKitActionButtonInteractionContext,
@@ -11,10 +11,7 @@ import { createTaskModal } from '../modals/createTaskModal';
 export class ExecuteActionButtonHandler {
   constructor(
     public readonly app: TodoistApp,
-    public readonly read: IRead,
-    public readonly http: IHttp,
-    public readonly modify: IModify,
-    public readonly persistence: IPersistence
+    public readonly modify: IModify
   ) {}
 
   public async run(context: UIKitActionButtonInteractionContext): Promise<IUIKitResponse> {

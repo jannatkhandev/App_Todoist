@@ -1,10 +1,4 @@
-import {
-  HttpStatusCode,
-  IHttp,
-  IModify,
-  IPersistence,
-  IRead,
-} from '@rocket.chat/apps-engine/definition/accessors';
+import { HttpStatusCode, IModify, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { IRoom } from '@rocket.chat/apps-engine/definition/rooms';
 import {
   UIKitBlockInteractionContext,
@@ -19,41 +13,34 @@ import { deleteConfirmationModal } from '../../modals/deleteConfirmationModal';
 interface DeleteItemParams {
   app: TodoistApp;
   context: UIKitViewSubmitInteractionContext;
-  data: any;
   room: IRoom;
   read: IRead;
-  persistence: IPersistence;
   modify: IModify;
   getUrl: (id?: string) => string;
   itemType: string;
-  roomId: string;
 }
 
 interface DeleteHandlerParams {
   context: UIKitViewSubmitInteractionContext;
-  data: any;
-  room: any;
+  room: IRoom;
   read: IRead;
-  persistence: IPersistence;
   modify: IModify;
   app?: TodoistApp;
-  roomId: string;
 }
 
 export async function deleteItem({
   app,
   context,
-  data,
   room,
   read,
-  persistence,
   modify,
   getUrl,
   itemType,
-  roomId,
 }: DeleteItemParams) {
-  const itemId = data.view.submit.value;
-  const user = context.getInteractionData().user;
+  const data = context.getInteractionData();
+  const itemId = data.view.submit!.value;
+  const user = data.user;
+  const roomId = room.id;
   let roomFromId = await read.getRoomReader().getById(roomId);
   if (!room) room = roomFromId!;
   try {
@@ -118,16 +105,13 @@ export async function deleteComment(params: DeleteHandlerParams) {
 export async function handleDeleteAction(
   app: TodoistApp,
   context: UIKitBlockInteractionContext,
-  read: IRead,
-  modify: IModify,
-  persistence: IPersistence,
-  room: IRoom
+  modify: IModify
 ): Promise<void> {
   const data = context.getInteractionData();
   const actionId = data.actionId;
   const itemId = data.value!;
   const user = data.user;
-  const roomId = room.id;
+  const roomId = data.room!.id;
 
   try {
     let itemType: string;
@@ -165,7 +149,6 @@ export async function handleDeleteAction(
 
     // Show confirmation modal
     const modal = await deleteConfirmationModal({
-      modify,
       itemType,
       itemName,
       itemId,
@@ -179,7 +162,7 @@ export async function handleDeleteAction(
       .getCreator()
       .startMessage()
       .setText(`Error opening delete confirmation: ${error.message}`)
-      .setRoom(room);
+      .setRoom(context.getInteractionData().room!);
     await modify.getNotifier().notifyUser(user, msg.getMessage());
   }
 }

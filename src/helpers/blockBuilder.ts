@@ -14,36 +14,76 @@ import {
 
 import { AppEnum } from '../enums/App';
 
-export async function getInputBox(
-  labelText: string,
-  placeholderText: string,
-  blockId: string,
-  actionId: string,
-  type:
-    | 'channels_select'
-    | 'conversations_select'
-    | 'datepicker'
-    | 'linear_scale'
-    | 'multi_channels_select'
-    | 'multi_conversations_select'
-    | 'multi_static_select'
-    | 'multi_users_select'
-    | 'plain_text_input'
-    | 'static_select'
-    | 'users_select'
-    | 'checkbox'
-    | 'radio_button'
-    | 'time_picker'
-    | 'toggle_switch' = 'plain_text_input',
-  options: {
+// Interfaces for common parameters
+interface BaseElementParams {
+  blockId?: string;
+  actionId?: string;
+  appId?: string;
+}
+
+interface ButtonParams extends BaseElementParams {
+  labelText: string;
+  value?: string;
+  style?: 'primary' | 'secondary' | 'danger' | 'warning' | 'success';
+  url?: string;
+}
+
+type InputElementType =
+  | 'channels_select'
+  | 'conversations_select'
+  | 'datepicker'
+  | 'linear_scale'
+  | 'multi_channels_select'
+  | 'multi_conversations_select'
+  | 'multi_static_select'
+  | 'multi_users_select'
+  | 'plain_text_input'
+  | 'static_select'
+  | 'users_select'
+  | 'checkbox'
+  | 'radio_button'
+  | 'time_picker'
+  | 'toggle_switch';
+
+interface InputParams extends BaseElementParams {
+  labelText: string;
+  placeholderText?: string;
+  type?: InputElementType;
+  options?: {
     initialValue?: string;
     multiline?: boolean;
     initialDate?: string;
     options?: Array<{ text: string; value: string }>;
     minValue?: number;
     maxValue?: number;
-  } = {}
-): Promise<InputBlock> {
+  };
+}
+
+interface DateInputParams extends BaseElementParams {
+  labelText: string;
+  placeholderText?: string;
+  initialDate?: string;
+}
+
+interface StaticSelectParams extends BaseElementParams {
+  placeholderText: string;
+  options: Array<Option>;
+  initialValue?: Option['value'];
+}
+
+interface ToggleParams extends BaseElementParams {
+  labelText: string;
+  options: Array<{ text: string; value: string }>;
+}
+
+export function getInputBox({
+  labelText,
+  placeholderText = '',
+  blockId = '',
+  actionId = '',
+  type = 'plain_text_input',
+  options = {},
+}: InputParams): InputBlock {
   const baseElement = {
     placeholder: {
       type: 'plain_text' as const,
@@ -90,14 +130,14 @@ export async function getInputBox(
   };
 }
 
-export async function getInputBoxDate(
-  labelText: string,
-  placeholderText: string,
-  blockId: string,
-  actionId: string,
-  initialDate?: string
-): Promise<InputBlock> {
-  const block: InputBlock = {
+export function getInputBoxDate({
+  labelText,
+  placeholderText = '',
+  blockId = '',
+  actionId = '',
+  initialDate,
+}: DateInputParams): InputBlock {
+  return {
     type: 'input',
     label: {
       type: 'plain_text',
@@ -110,59 +150,55 @@ export async function getInputBoxDate(
         text: placeholderText,
       },
       appId: AppEnum.APP_ID,
-      blockId: blockId,
-      actionId: actionId,
-      initialDate: initialDate,
+      blockId,
+      actionId,
+      initialDate,
     },
   };
-  return block;
 }
 
-export async function getButton(
-  labelText: string,
-  blockId: string,
-  actionId: string,
-  value?: string,
-  style?: 'primary' | 'secondary' | 'danger' | 'warning' | 'success',
-  url?: string
-): Promise<ButtonElement> {
-  const button: ButtonElement = {
+export function getButton({
+  labelText,
+  blockId = '',
+  actionId = '',
+  value,
+  style,
+  url,
+}: ButtonParams): ButtonElement {
+  return {
     type: 'button',
     text: {
       type: 'plain_text',
       text: labelText,
     },
     appId: AppEnum.APP_ID,
-    blockId: blockId,
-    actionId: actionId,
-    url: url,
-    value: value,
-    style: style,
+    blockId,
+    actionId,
+    url,
+    value,
+    style,
   };
-  return button;
 }
 
-export async function getSectionBlock(labelText: string, accessory?: any): Promise<SectionBlock> {
-  const block: SectionBlock = {
+export function getSectionBlock(labelText: string, accessory?: any): SectionBlock {
+  return {
     type: 'section',
     text: {
       type: 'plain_text',
       text: labelText,
     },
-    accessory: accessory,
+    accessory,
   };
-  return block;
 }
 
-export async function getDividerBlock(): Promise<DividerBlock> {
-  const block: DividerBlock = {
+export function getDividerBlock(): DividerBlock {
+  return {
     type: 'divider',
   };
-  return block;
 }
 
-export async function getContextBlock(elementText: string): Promise<ContextBlock> {
-  const block: ContextBlock = {
+export function getContextBlock(elementText: string): ContextBlock {
+  return {
     type: 'context',
     elements: [
       {
@@ -171,57 +207,53 @@ export async function getContextBlock(elementText: string): Promise<ContextBlock
       },
     ],
   };
-  return block;
 }
 
-export async function getStaticSelectElement(
-  placeholderText: string,
-  options: Array<Option>,
-  blockId: string,
-  actionId: string,
-  initialValue?: Option['value']
-): Promise<StaticSelectElement> {
-  const block: StaticSelectElement = {
+export function getStaticSelectElement({
+  placeholderText,
+  options,
+  blockId = '',
+  actionId = '',
+  initialValue,
+}: StaticSelectParams): StaticSelectElement {
+  return {
     type: 'static_select',
     placeholder: {
       type: 'plain_text',
       text: placeholderText,
     },
-    options: options,
+    options,
     appId: AppEnum.APP_ID,
-    blockId: blockId,
-    actionId: actionId,
-    initialValue: initialValue,
+    blockId,
+    actionId,
+    initialValue,
   };
-  return block;
 }
 
-export async function getOptions(text: string, value: string): Promise<Option> {
-  const block: Option = {
-    text: { type: 'plain_text', text: text },
-    value: value,
+export function getOptions(text: string, value: string): Option {
+  return {
+    text: { type: 'plain_text', text },
+    value,
   };
-  return block;
 }
 
-export async function getActionsBlock(
+export function getActionsBlock(
   blockId: string,
-  elements: Array<ButtonElement> | Array<StaticSelectElement> | Array<ToggleSwitchElement>
-): Promise<ActionsBlock> {
-  const block: ActionsBlock = {
+  elements: Array<ButtonElement | StaticSelectElement | ToggleSwitchElement>
+): ActionsBlock {
+  return {
     type: 'actions',
-    blockId: blockId,
-    elements: elements,
+    blockId,
+    elements,
   };
-  return block;
 }
 
-export async function createToggleButton(
-  labelText: string,
-  blockId: string,
-  actionId: string,
-  options: Array<{ text: string; value: string }>
-): Promise<InputBlock> {
+export function createToggleButton({
+  labelText,
+  blockId = '',
+  actionId = '',
+  options,
+}: ToggleParams): InputBlock {
   return {
     type: 'input',
     label: {

@@ -1,9 +1,5 @@
-import { IHttp, IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
-import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
-import {
-  UIKitInteractionContext,
-  UIKitViewSubmitInteractionContext,
-} from '@rocket.chat/apps-engine/definition/uikit';
+import { IModify, IRead } from '@rocket.chat/apps-engine/definition/accessors';
+import { UIKitViewSubmitInteractionContext } from '@rocket.chat/apps-engine/definition/uikit';
 
 import { TodoistApp } from '../../TodoistApp';
 import { ModalsEnum } from '../enums/Modals';
@@ -14,43 +10,45 @@ export class ExecuteViewSubmitHandler {
   constructor(
     private readonly app: TodoistApp,
     private readonly read: IRead,
-    private readonly http: IHttp,
-    private readonly modify: IModify,
-    private readonly persistence: IPersistence
+    private readonly modify: IModify
   ) {}
 
-  public async run(
-    app: TodoistApp,
-    context: UIKitViewSubmitInteractionContext,
-    read: IRead,
-    http: IHttp,
-    persistence: IPersistence,
-    modify: IModify,
-    slashcommandcontext?: SlashCommandContext,
-    uikitcontext?: UIKitInteractionContext
-  ) {
+  public async run(context: UIKitViewSubmitInteractionContext) {
     const data = context.getInteractionData();
-    let { user, view, room } = data;
+    let { view, room } = data;
     const elements = view.id.split('#');
     const viewId = elements[0];
     const roomId = elements[1];
-    if (!room) room = await read.getRoomReader().getById(roomId);
+    if (!room) room = await this.read.getRoomReader().getById(roomId);
+    if (!room) return context.getInteractionResponder().errorResponse();
     try {
       switch (viewId) {
         case ModalsEnum.CREATE_TASK:
-          await createTask({ app, context, data, room, read, persistence, modify, http });
+          await createTask({ app: this.app, context, room, modify: this.modify });
           return context.getInteractionResponder().successResponse();
         case ModalsEnum.DELETE_TASK:
-          await deleteTask({ app, context, data, room, read, persistence, modify, roomId });
+          await deleteTask({ app: this.app, context, room, read: this.read, modify: this.modify });
           return context.getInteractionResponder().successResponse();
         case ModalsEnum.DELETE_SECTION:
-          await deleteSection({ app, context, data, room, read, persistence, modify, roomId });
+          await deleteSection({
+            app: this.app,
+            context,
+            room,
+            read: this.read,
+            modify: this.modify,
+          });
           return context.getInteractionResponder().successResponse();
         case ModalsEnum.DELETE_LABEL:
-          await deleteLabel({ app, context, data, room, read, persistence, modify, roomId });
+          await deleteLabel({ app: this.app, context, room, read: this.read, modify: this.modify });
           return context.getInteractionResponder().successResponse();
         case ModalsEnum.DELETE_COMMENT:
-          await deleteComment({ app, context, data, room, read, persistence, modify, roomId });
+          await deleteComment({
+            app: this.app,
+            context,
+            room,
+            read: this.read,
+            modify: this.modify,
+          });
           return context.getInteractionResponder().successResponse();
         default:
           break;

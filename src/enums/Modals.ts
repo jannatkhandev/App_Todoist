@@ -1,6 +1,6 @@
 export enum ModalsEnum {
   CREATE_TASK_MODAL_NAME = 'Create New Task ✏️',
-  CREATE_TASK_MODAL_SUBMIT_BUTTOB_LABEL = 'Create',
+  CREATE_TASK_MODAL_SUBMIT_BUTTON_LABEL = 'Create',
   EDIT_TASK_MODAL_NAME = 'Edit Task ID: #',
   CREATE_TASK = 'create-task',
   EDIT_TASK = 'edit-task',
