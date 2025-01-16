@@ -1,10 +1,4 @@
-import {
-  HttpStatusCode,
-  IHttp,
-  IModify,
-  IPersistence,
-  IRead,
-} from '@rocket.chat/apps-engine/definition/accessors';
+import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { IRoom } from '@rocket.chat/apps-engine/definition/rooms';
 import { UIKitViewSubmitInteractionContext } from '@rocket.chat/apps-engine/definition/uikit';
 import { IUIKitViewSubmitIncomingInteraction } from '@rocket.chat/apps-engine/definition/uikit/UIKitIncomingInteractionTypes';
@@ -17,22 +11,15 @@ import { getTasksUrl } from '../../helpers/const';
 export async function createTask({
   app,
   context,
-  data,
   room,
-  read,
-  persistence,
   modify,
-  http,
 }: {
   app: TodoistApp;
   context: UIKitViewSubmitInteractionContext;
-  data: IUIKitViewSubmitIncomingInteraction;
   room?: IRoom;
-  read: IRead;
-  persistence: IPersistence;
   modify: IModify;
-  http: IHttp;
 }) {
+  const data = context.getInteractionData();
   const state = data.view.state;
   const user: IUser = context.getInteractionData().user;
   const project_id = state?.[ModalsEnum.PROJECT_ID_BLOCK]?.[ModalsEnum.PROJECT_ID_INPUT];
@@ -45,8 +32,6 @@ export async function createTask({
     new Date(state?.[ModalsEnum.TASK_DUE_DATE_BLOCK]?.[ModalsEnum.TASK_DUE_DATE_INPUT]).getTime() *
       1
   );
-  //   const notifyUser = state?.[ModalsEnum.ASSIGNEE_NOTIFY_BLOCK]?.[ModalsEnum.ASSIGNEE_NOTIFY_ACTION_ID] == "Yes" ? "true" : "false";
-  //   const assignee = state?.[ModalsEnum.TASK_ASSIGNEES_BLOCK]?.[ModalsEnum.TASK_ASSIGNEES_INPUT];
 
   const body = {
     content: `${taskName}`,

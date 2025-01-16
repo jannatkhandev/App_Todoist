@@ -1,19 +1,16 @@
-import { IModify, IUIKitSurfaceViewParam } from '@rocket.chat/apps-engine/definition/accessors';
+import { IUIKitSurfaceViewParam } from '@rocket.chat/apps-engine/definition/accessors';
 import { UIKitSurfaceType } from '@rocket.chat/apps-engine/definition/uikit';
-import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 import { ModalsEnum } from '../enums/Modals';
 import { getButton, getSectionBlock } from '../helpers/blockBuilder';
 
 export async function deleteConfirmationModal({
-  modify,
   itemType,
   itemName,
   itemId,
   actionId,
   roomId,
 }: {
-  modify: IModify;
   itemType: string;
   itemName: string;
   itemId: string;
@@ -22,21 +19,23 @@ export async function deleteConfirmationModal({
 }): Promise<IUIKitSurfaceViewParam> {
   const modalKey = `DELETE_${itemType.toUpperCase()}` as keyof typeof ModalsEnum;
   const viewId = ModalsEnum[modalKey] + `#${roomId}`;
-  const block: LayoutBlock[] = [];
 
-  const confirmationMessage = await getSectionBlock(
+  const confirmationMessage = getSectionBlock(
     `Are you sure you want to delete ${itemType}: *${itemName}*?`
   );
-  block.push(confirmationMessage);
 
-  const closeButton = await getButton('Cancel', '', '', 'secondary');
-  const submitButton = await getButton(
-    ModalsEnum.DELETE_CONFIRMATION_SUBMIT_BUTTON_LABEL,
-    '',
-    actionId,
-    itemId,
-    'danger'
-  );
+  const [closeButton, submitButton] = await Promise.all([
+    getButton({
+      labelText: 'Cancel',
+      style: 'secondary',
+    }),
+    getButton({
+      labelText: ModalsEnum.DELETE_CONFIRMATION_SUBMIT_BUTTON_LABEL,
+      actionId,
+      value: itemId,
+      style: 'danger',
+    }),
+  ]);
 
   return {
     id: viewId,
@@ -47,6 +46,6 @@ export async function deleteConfirmationModal({
     },
     close: closeButton,
     submit: submitButton,
-    blocks: block,
+    blocks: [confirmationMessage],
   };
 }

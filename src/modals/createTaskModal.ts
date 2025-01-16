@@ -23,86 +23,20 @@ export async function createTaskModal({
   descriptionText?: string;
 }): Promise<IUIKitSurfaceViewParam> {
   const viewId = ModalsEnum.CREATE_TASK + `#${roomId}`;
-  const block: LayoutBlock[] = [];
+  const blocks = (
+    await Promise.all([createProjectSection(projectId), createTaskDetailsSection(descriptionText)])
+  ).reduce((acc, val) => acc.concat(val), []) as LayoutBlock[];
 
-  if (projectId) {
-    let projectIdInputBox = await getInputBox(
-      ModalsEnum.PROJECT_ID_INPUT_LABEL,
-      ModalsEnum.PROJECT_ID_INPUT_LABEL_DEFAULT,
-      ModalsEnum.PROJECT_ID_BLOCK,
-      ModalsEnum.PROJECT_ID_INPUT,
-      'plain_text_input',
-      { initialValue: projectId }
-    );
-    block.push(projectIdInputBox);
-  }
-
-  let taskNameInputbox = await getInputBox(
-    ModalsEnum.TASK_NAME_INPUT_LABEL,
-    ModalsEnum.TASK_NAME_INPUT_LABEL_DEFAULT,
-    ModalsEnum.TASK_NAME_BLOCK,
-    ModalsEnum.TASK_NAME_INPUT
-  );
-
-  let option1 = await getOptions('Urgent', '4');
-  let option2 = await getOptions('High', '3');
-  let option3 = await getOptions('Normal', '2');
-  let option4 = await getOptions('Low', '1');
-
-  let taskPrioritySelectElement = await getStaticSelectElement(
-    ModalsEnum.TASK_PRIORITY_PLACEHOLDER,
-    [option1, option2, option3, option4],
-    ModalsEnum.TASK_PRIORITY_BLOCK,
-    ModalsEnum.TASK_PRIORITY_ACTION_ID,
-    'Normal'
-  );
-  let taskPriorityActionBlock = await getActionsBlock(ModalsEnum.TASK_PRIORITY_BLOCK, [
-    taskPrioritySelectElement,
+  const [closeButton, submitButton] = await Promise.all([
+    getButton({
+      labelText: 'Cancel',
+      style: 'secondary',
+    }),
+    getButton({
+      labelText: ModalsEnum.CREATE_TASK_MODAL_SUBMIT_BUTTON_LABEL,
+      style: 'success',
+    }),
   ]);
-
-  let taskDescriptionInputBox = await getInputBox(
-    ModalsEnum.TASK_DESCRIPTION_INPUT_LABEL,
-    ModalsEnum.TASK_DESCRIPTION_INPUT_LABEL_DEFAULT,
-    ModalsEnum.TASK_DESCRIPTION_BLOCK,
-    ModalsEnum.TASK_DESCRIPTION_INPUT,
-    undefined,
-    { initialValue: descriptionText ?? '', multiline: true }
-  );
-
-  let taskDueDateInputBox = await getInputBoxDate(
-    ModalsEnum.TASK_DUE_DATE_INPUT_LABEL,
-    '',
-    ModalsEnum.TASK_DUE_DATE_BLOCK,
-    ModalsEnum.TASK_DUE_DATE_INPUT
-  );
-
-  // @TODO: Add this once we get Todoist User's ID <> RC User ID synced.
-  // let taskAssigneeInputBlock = await getInputBox(ModalsEnum.TASK_ASSIGNEES_INPUT_LABEL, ModalsEnum.TASK_ASSIGNEES_INPUT_LABEL_DEFAULT, ModalsEnum.TASK_ASSIGNEES_BLOCK, ModalsEnum.TASK_ASSIGNEES_INPUT, 'users_select');
-
-  // let assigneeRoomSelectElement = await createToggleButton(
-  //   '',
-  //   ModalsEnum.ASSIGNEE_NOTIFY_BLOCK,
-  //   ModalsEnum.ASSIGNEE_NOTIFY_ACTION_ID,
-  //   [
-  //     { text: ModalsEnum.ASSIGNEE_NOTIFY_PLACEHOLDER, value: 'true' },
-  //   ]
-  // );
-
-  block.push(
-    taskNameInputbox,
-    taskPriorityActionBlock,
-    taskDescriptionInputBox,
-    taskDueDateInputBox
-  );
-
-  const closeButton = await getButton('Cancel', '', '', 'secondary');
-  const submitButton = await getButton(
-    ModalsEnum.CREATE_TASK_MODAL_SUBMIT_BUTTOB_LABEL,
-    '',
-    '',
-    '',
-    'success'
-  );
 
   return {
     id: viewId,
@@ -113,6 +47,73 @@ export async function createTaskModal({
     },
     close: closeButton,
     submit: submitButton,
-    blocks: block,
+    blocks,
   };
+}
+
+async function createProjectSection(projectId?: string): Promise<LayoutBlock[]> {
+  if (!projectId) {
+    return [];
+  }
+
+  const projectIdInputBox = getInputBox({
+    labelText: ModalsEnum.PROJECT_ID_INPUT_LABEL,
+    placeholderText: ModalsEnum.PROJECT_ID_INPUT_LABEL_DEFAULT,
+    blockId: ModalsEnum.PROJECT_ID_BLOCK,
+    actionId: ModalsEnum.PROJECT_ID_INPUT,
+    type: 'plain_text_input',
+    options: { initialValue: projectId },
+  });
+
+  return [projectIdInputBox];
+}
+
+async function createTaskDetailsSection(descriptionText?: string): Promise<LayoutBlock[]> {
+  const [taskNameInputbox, taskPriorityActionBlock, taskDescriptionInputBox, taskDueDateInputBox] =
+    await Promise.all([
+      getInputBox({
+        labelText: ModalsEnum.TASK_NAME_INPUT_LABEL,
+        placeholderText: ModalsEnum.TASK_NAME_INPUT_LABEL_DEFAULT,
+        blockId: ModalsEnum.TASK_NAME_BLOCK,
+        actionId: ModalsEnum.TASK_NAME_INPUT,
+      }),
+      createPrioritySection(),
+      getInputBox({
+        labelText: ModalsEnum.TASK_DESCRIPTION_INPUT_LABEL,
+        placeholderText: ModalsEnum.TASK_DESCRIPTION_INPUT_LABEL_DEFAULT,
+        blockId: ModalsEnum.TASK_DESCRIPTION_BLOCK,
+        actionId: ModalsEnum.TASK_DESCRIPTION_INPUT,
+        options: {
+          initialValue: descriptionText ?? '',
+          multiline: true,
+        },
+      }),
+      getInputBoxDate({
+        labelText: ModalsEnum.TASK_DUE_DATE_INPUT_LABEL,
+        placeholderText: '',
+        blockId: ModalsEnum.TASK_DUE_DATE_BLOCK,
+        actionId: ModalsEnum.TASK_DUE_DATE_INPUT,
+      }),
+    ]);
+
+  return [taskNameInputbox, taskPriorityActionBlock, taskDescriptionInputBox, taskDueDateInputBox];
+}
+
+async function createPrioritySection(): Promise<LayoutBlock> {
+  const [option1, option2, option3, option4] = await Promise.all([
+    getOptions('Urgent', '4'),
+    getOptions('High', '3'),
+    getOptions('Normal', '2'),
+    getOptions('Low', '1'),
+  ]);
+
+  const taskPrioritySelectElement = getStaticSelectElement({
+    placeholderText: ModalsEnum.TASK_PRIORITY_PLACEHOLDER,
+    options: [option1, option2, option3, option4],
+    blockId: ModalsEnum.TASK_PRIORITY_BLOCK,
+    actionId: ModalsEnum.TASK_PRIORITY_ACTION_ID,
+    initialValue: 'Normal',
+  });
+
+  return getActionsBlock(ModalsEnum.TASK_PRIORITY_BLOCK, [taskPrioritySelectElement]);
 }

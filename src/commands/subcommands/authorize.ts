@@ -1,6 +1,5 @@
 import { IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
-import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 import { TodoistApp } from '../../../TodoistApp';
 import { getButton, getSectionBlock } from '../../helpers/blockBuilder';
@@ -14,14 +13,20 @@ export async function authorize(
   persistence: IPersistence
 ): Promise<void> {
   const url = await app.getOauth2ClientInstance().getUserAuthorizationUrl(user);
-  const block: LayoutBlock[] = [];
+  const authButton = await getAuthorizeButton(url.toString());
 
-  let authButton = await getButton('Authorize', '', '', '', 'primary', url.toString());
-  let textsectionBlock = await getSectionBlock(
+  const textsectionBlock = getSectionBlock(
     'Please click the button below to authorize access to your Todoist account 👇',
     authButton
   );
-  block.push(textsectionBlock);
 
-  await sendDirectMessage(read, modify, user, '', persistence, block);
+  await sendDirectMessage(read, modify, user, '', persistence, [textsectionBlock]);
+}
+
+function getAuthorizeButton(url: string) {
+  return getButton({
+    labelText: 'Authorize',
+    style: 'primary',
+    url,
+  });
 }

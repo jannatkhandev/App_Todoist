@@ -14,9 +14,12 @@ export async function task(
   const user = context.getSender();
   const room = context.getRoom();
   const triggerId = context.getTriggerId();
+
   const modal = await createTaskModal({ projectId: undefined, roomId: room.id });
-  if (triggerId) await modify.getUiController().openSurfaceView(modal, { triggerId }, user);
-  else {
+
+  if (triggerId) {
+    await modify.getUiController().openSurfaceView(modal, { triggerId }, user);
+  } else {
     const msg = modify.getCreator().startMessage().setText(`❗️ Invalid Trigger ID`).setRoom(room);
     await modify.getNotifier().notifyUser(user, msg.getMessage());
   }
