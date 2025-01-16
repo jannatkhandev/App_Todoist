@@ -70,7 +70,7 @@ export async function getComments(
 async function createCommentSection(comment: IComment): Promise<LayoutBlock[]> {
   const blocks: LayoutBlock[] = [];
 
-  const commentContentBlock = getSectionBlock(`${comment.content}`);
+  const commentContentBlock = getSectionBlock(comment.content);
   const commentContextBlock = getContextBlock(
     `Posted: ${new Date(comment.posted_at).toLocaleString()}`
   );

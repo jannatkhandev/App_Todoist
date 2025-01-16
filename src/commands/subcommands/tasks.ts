@@ -1,9 +1,4 @@
-import {
-  HttpStatusCode,
-  IModify,
-  IPersistence,
-  IRead,
-} from '@rocket.chat/apps-engine/definition/accessors';
+import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
@@ -20,10 +15,8 @@ import { ITask } from '../../interfaces/tasks';
 
 export async function tasks(
   app: TodoistApp,
-  read: IRead,
   modify: IModify,
-  context: SlashCommandContext,
-  persistence: IPersistence
+  context: SlashCommandContext
 ): Promise<void> {
   const user = context.getSender();
   const room = context.getRoom();
@@ -63,7 +56,7 @@ export async function tasks(
 async function createTaskSection(task: ITask): Promise<LayoutBlock[]> {
   const dueInfo = task.due ? `Due: ${task.due.string || task.due.date}` : 'No due date';
 
-  const taskNameBlock = getSectionBlock(`${task.content}`);
+  const taskNameBlock = getSectionBlock(task.content);
   const taskContextBlock = getContextBlock(
     `${dueInfo} | Priority: ${task.priority} | Labels: ${task.labels.join(', ')}`
   );

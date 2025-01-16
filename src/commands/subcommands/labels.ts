@@ -1,9 +1,4 @@
-import {
-  HttpStatusCode,
-  IModify,
-  IPersistence,
-  IRead,
-} from '@rocket.chat/apps-engine/definition/accessors';
+import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
@@ -20,10 +15,8 @@ import { ILabel } from '../../interfaces/labels';
 
 export async function labels(
   app: TodoistApp,
-  read: IRead,
   modify: IModify,
-  context: SlashCommandContext,
-  persistence: IPersistence
+  context: SlashCommandContext
 ): Promise<void> {
   const user = context.getSender();
   const room = context.getRoom();
@@ -60,7 +53,7 @@ export async function labels(
 }
 
 async function createLabelSection(label: ILabel): Promise<LayoutBlock[]> {
-  const labelNameBlock = getSectionBlock(`${label.name}`);
+  const labelNameBlock = getSectionBlock(label.name);
   const labelContextBlock = getContextBlock(
     `Color: ${String(label.color).charAt(0).toUpperCase() + String(label.color).slice(1)} | ` +
       `Order: ${label.order} | Favorite: ${label.is_favorite ? 'Yes' : 'No'}`

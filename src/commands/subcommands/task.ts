@@ -4,13 +4,7 @@ import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashco
 import { TodoistApp } from '../../../TodoistApp';
 import { createTaskModal } from '../../modals/createTaskModal';
 
-export async function task(
-  app: TodoistApp,
-  read: IRead,
-  modify: IModify,
-  context: SlashCommandContext,
-  persistence: IPersistence
-): Promise<void> {
+export async function task(modify: IModify, context: SlashCommandContext): Promise<void> {
   const user = context.getSender();
   const room = context.getRoom();
   const triggerId = context.getTriggerId();
