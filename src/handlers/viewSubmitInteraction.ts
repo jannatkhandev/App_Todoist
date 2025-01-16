@@ -19,8 +19,19 @@ export class ExecuteViewSubmitHandler {
     const elements = view.id.split('#');
     const viewId = elements[0];
     const roomId = elements[1];
-    if (!room) room = await this.read.getRoomReader().getById(roomId);
-    if (!room) return context.getInteractionResponder().errorResponse();
+    const logger = this.app.getLogger();
+
+    if (!room) {
+      logger.warn('Room data not present in context.');
+      room = await this.read.getRoomReader().getById(roomId);
+      if (!room) {
+        logger.warn(`Room with id: ${roomId} does not exist.`);
+        return context.getInteractionResponder().errorResponse();
+      }
+    }
+
+    logger.debug(viewId, room.id);
+
     try {
       switch (viewId) {
         case ModalsEnum.CREATE_TASK:
@@ -51,16 +62,15 @@ export class ExecuteViewSubmitHandler {
           });
           return context.getInteractionResponder().successResponse();
         default:
-          break;
+          logger.warn(`Invalid ${viewId} received in context.`);
+          return context.getInteractionResponder().errorResponse();
       }
     } catch (error) {
+      logger.error(error);
       return context.getInteractionResponder().viewErrorResponse({
         viewId: data.view.id,
         errors: error,
       });
     }
-    return {
-      success: true,
-    };
   }
 }

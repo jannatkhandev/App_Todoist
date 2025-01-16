@@ -18,6 +18,7 @@ export async function createTask({
   room?: IRoom;
   modify: IModify;
 }) {
+  const logger = app.getLogger();
   const data = context.getInteractionData();
   const state = data.view.state;
   const user: IUser = context.getInteractionData().user;
@@ -25,19 +26,30 @@ export async function createTask({
   const taskName = state?.[ModalsEnum.TASK_NAME_BLOCK]?.[ModalsEnum.TASK_NAME_INPUT];
   const taskPriority =
     state?.[ModalsEnum.TASK_PRIORITY_BLOCK]?.[ModalsEnum.TASK_PRIORITY_ACTION_ID];
-  const taskDescription =
+  const description =
     state?.[ModalsEnum.TASK_DESCRIPTION_BLOCK]?.[ModalsEnum.TASK_DESCRIPTION_INPUT];
   const taskdueDate = Math.floor(
     new Date(state?.[ModalsEnum.TASK_DUE_DATE_BLOCK]?.[ModalsEnum.TASK_DUE_DATE_INPUT]).getTime() *
       1
   );
 
+  if (!taskName) {
+    const error = 'Task name is missing!';
+    logger.error(error);
+    const msg = modify
+      .getCreator()
+      .startMessage()
+      .setText(`❗️ Unable to create task! \n Error: ${error}}`)
+      .setRoom(room!);
+    await modify.getNotifier().notifyUser(user, msg.getMessage());
+  }
+
   const body = {
     content: `${taskName}`,
-    description: `${taskDescription}`,
+    ...(description && { description }),
     ...(project_id && { project_id }),
     due_date: taskdueDate
-      ? new Date(taskdueDate).toISOString().split('T')[0] // Format as YYYY-MM-DD
+      ? new Date(taskdueDate).toISOString().split('T')[0] // Formatted as YYYY-MM-DD
       : new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow's date
     priority: parseInt(taskPriority),
   };

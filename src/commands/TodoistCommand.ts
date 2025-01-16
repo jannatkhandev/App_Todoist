@@ -89,6 +89,12 @@ export class TodoistCommand implements ISlashCommand {
     8. \`shared-labels:\` fetches your shared labels.
 `;
 
-    return sendNotification(read, modify, user, room, text);
+    return sendNotification({
+      read: read,
+      modify: modify,
+      user: user,
+      room: room,
+      message: text,
+    });
   }
 }

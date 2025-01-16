@@ -1,10 +1,9 @@
-import { IModify, IUIKitSurfaceViewParam } from '@rocket.chat/apps-engine/definition/accessors';
+import { IUIKitSurfaceViewParam } from '@rocket.chat/apps-engine/definition/accessors';
 import { UIKitSurfaceType } from '@rocket.chat/apps-engine/definition/uikit';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 import { ModalsEnum } from '../enums/Modals';
 import {
-  createToggleButton,
   getActionsBlock,
   getButton,
   getInputBox,
@@ -23,6 +22,7 @@ export async function createTaskModal({
   descriptionText?: string;
 }): Promise<IUIKitSurfaceViewParam> {
   const viewId = ModalsEnum.CREATE_TASK + `#${roomId}`;
+
   const blocks = (
     await Promise.all([createProjectSection(projectId), createTaskDetailsSection(descriptionText)])
   ).reduce((acc, val) => acc.concat(val), []) as LayoutBlock[];

@@ -5,61 +5,63 @@ import {
 } from '@rocket.chat/apps-engine/definition/metadata/RocketChatAssociations';
 import { IUser } from '@rocket.chat/apps-engine/definition/users/IUser';
 
+export interface NotificationParams {
+  read: IRead;
+  persistence: IPersistence;
+  user: IUser;
+}
+
 interface INotificationsStatus {
   status: boolean;
 }
 
-export class NotificationsController {
-  private read: IRead;
-  private persistence: IPersistence;
-  private association: RocketChatAssociationRecord;
-  private userAssociation: RocketChatAssociationRecord;
+function createAssociations(userId: string): RocketChatAssociationRecord[] {
+  return [
+    new RocketChatAssociationRecord(RocketChatAssociationModel.MISC, 'todoist-notifications'),
+    new RocketChatAssociationRecord(RocketChatAssociationModel.USER, userId),
+  ];
+}
 
-  constructor(read: IRead, persistence: IPersistence, user: IUser) {
-    this.read = read;
-    this.persistence = persistence;
-    this.association = new RocketChatAssociationRecord(
-      RocketChatAssociationModel.MISC,
-      `todoist-notifications`
-    );
+export async function getNotificationsStatus({
+  read,
+  user,
+}: Pick<NotificationParams, 'read' | 'user'>): Promise<INotificationsStatus | undefined> {
+  const associations = createAssociations(user.id);
+  const [record] = await read.getPersistenceReader().readByAssociations(associations);
+  return record as INotificationsStatus;
+}
 
-    this.userAssociation = new RocketChatAssociationRecord(
-      RocketChatAssociationModel.USER,
-      user.id
-    );
+export async function setNotificationsStatus({
+  persistence,
+  user,
+  status,
+}: Pick<NotificationParams, 'persistence' | 'user'> & { status: boolean }): Promise<boolean> {
+  const associations = createAssociations(user.id);
+  await persistence.createWithAssociations({ status }, associations);
+  return status;
+}
+
+export async function updateNotificationsStatus({
+  read,
+  persistence,
+  user,
+  status,
+}: NotificationParams & { status: boolean }): Promise<boolean> {
+  const notificationsStatus = await getNotificationsStatus({ read, user });
+
+  if (!notificationsStatus) {
+    return setNotificationsStatus({ persistence, user, status });
   }
 
-  public async getNotificationsStatus(): Promise<INotificationsStatus> {
-    const [record] = await this.read
-      .getPersistenceReader()
-      .readByAssociations([this.association, this.userAssociation]);
+  const associations = createAssociations(user.id);
+  await persistence.updateByAssociations(associations, { status });
+  return status;
+}
 
-    return record as INotificationsStatus;
-  }
-
-  public async setNotificationsStatus(status: boolean): Promise<boolean> {
-    await this.persistence.createWithAssociations({ status }, [
-      this.association,
-      this.userAssociation,
-    ]);
-    return status;
-  }
-
-  public async updateNotificationsStatus(status: boolean) {
-    const notificationsStatus = await this.getNotificationsStatus();
-
-    if (!notificationsStatus) {
-      return await this.setNotificationsStatus(status);
-    }
-
-    await this.persistence.updateByAssociations([this.association, this.userAssociation], {
-      status,
-    });
-
-    return status;
-  }
-
-  public async deleteNotifications(): Promise<void> {
-    await this.persistence.removeByAssociations([this.association, this.userAssociation]);
-  }
+export async function deleteNotifications({
+  persistence,
+  user,
+}: Pick<NotificationParams, 'persistence' | 'user'>): Promise<void> {
+  const associations = createAssociations(user.id);
+  await persistence.removeByAssociations(associations);
 }

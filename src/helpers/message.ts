@@ -3,56 +3,81 @@ import { IRoom, RoomType } from '@rocket.chat/apps-engine/definition/rooms';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
-import { NotificationsController } from './notification';
+import { NotificationParams, getNotificationsStatus } from './notification';
+
+interface GetDirectParams {
+  read: IRead;
+  modify: IModify;
+  appUser: IUser;
+  username: string;
+}
+
+interface SendMessageParams {
+  modify: IModify;
+  room: IRoom;
+  sender: IUser;
+  message: string;
+  blocks?: Array<LayoutBlock>;
+}
+
+interface SendNotificationParams {
+  read: IRead;
+  modify: IModify;
+  user: IUser;
+  room: IRoom;
+  message: string;
+  blocks?: Array<LayoutBlock>;
+}
+
+interface SendDirectMessageParams {
+  read: IRead;
+  modify: IModify;
+  user: IUser;
+  message: string;
+  persistence: IPersistence;
+  blocks?: LayoutBlock[];
+}
+
+const HIGH_HIERARCHY_ROLES = ['admin', 'owner', 'moderator'] as const;
 
 /**
  * Gets a direct message room between bot and another user, creating if it doesn't exist
- *
- * @param read
- * @param modify
- * @param appUser
- * @param username the username to create a direct with bot
- * @returns the room or undefined if botUser or botUsername is not set
  */
-export async function getDirect(
-  read: IRead,
-  modify: IModify,
-  appUser: IUser,
-  username: string
-): Promise<IRoom | undefined> {
+export async function getDirect({
+  read,
+  modify,
+  appUser,
+  username,
+}: GetDirectParams): Promise<IRoom | undefined> {
   const usernames = [appUser.username, username];
-  let room: IRoom;
+
   try {
-    room = await read.getRoomReader().getDirectByUsernames(usernames);
-  } catch (error) {
-    this.app.getLogger().error(error);
-    return;
-  }
+    const room = await read.getRoomReader().getDirectByUsernames(usernames);
+    if (room) {
+      return room;
+    }
 
-  if (room) {
-    return room;
-  } else {
-    let roomId: string;
-
-    // Create direct room between appUser and username
     const newRoom = modify
       .getCreator()
       .startRoom()
       .setType(RoomType.DIRECT_MESSAGE)
       .setCreator(appUser)
       .setMembersToBeAddedByUsernames(usernames);
-    roomId = await modify.getCreator().finish(newRoom);
+
+    const roomId = await modify.getCreator().finish(newRoom);
     return await read.getRoomReader().getById(roomId);
+  } catch (error) {
+    return undefined;
   }
 }
 
-export async function sendMessage(
-  modify: IModify,
-  room: IRoom,
-  sender: IUser,
-  message: string,
-  blocks?: Array<LayoutBlock>
-): Promise<string> {
+export async function sendMessage({
+  modify,
+  room,
+  sender,
+  message,
+  blocks,
+}: SendMessageParams): Promise<string> {
   const msg = modify
     .getCreator()
     .startMessage()
@@ -62,34 +87,27 @@ export async function sendMessage(
     .setParseUrls(false)
     .setText(message);
 
-  if (blocks !== undefined) {
+  if (blocks) {
     msg.setBlocks(blocks);
   }
 
   return await modify.getCreator().finish(msg);
 }
 
-export async function shouldSendMessage(
-  read: IRead,
-  persistence: IPersistence,
-  user: IUser
-): Promise<boolean> {
-  const notificationsController = new NotificationsController(read, persistence, user);
-  const notificationStatus = await notificationsController.getNotificationsStatus();
-
-  return notificationStatus ? notificationStatus.status : true;
+export async function shouldSendMessage(params: NotificationParams): Promise<boolean> {
+  const notificationStatus = await getNotificationsStatus(params);
+  return notificationStatus?.status ?? true;
 }
 
-export async function sendNotification(
-  read: IRead,
-  modify: IModify,
-  user: IUser,
-  room: IRoom,
-  message: string,
-  blocks?: Array<LayoutBlock>
-): Promise<void> {
+export async function sendNotification({
+  read,
+  modify,
+  user,
+  room,
+  message,
+  blocks,
+}: SendNotificationParams): Promise<void> {
   const appUser = (await read.getUserReader().getAppUser()) as IUser;
-
   const msg = modify.getCreator().startMessage().setSender(appUser).setRoom(room).setText(message);
 
   if (blocks) {
@@ -99,27 +117,44 @@ export async function sendNotification(
   return read.getNotifier().notifyUser(user, msg.getMessage());
 }
 
-export async function sendDirectMessage(
-  read: IRead,
-  modify: IModify,
-  user: IUser,
-  message: string,
-  persistence: IPersistence,
-  blocks?: Array<LayoutBlock>
-): Promise<string> {
+export async function sendDirectMessage({
+  read,
+  modify,
+  user,
+  message,
+  persistence,
+  blocks,
+}: SendDirectMessageParams): Promise<string> {
   const appUser = (await read.getUserReader().getAppUser()) as IUser;
-  const targetRoom = (await getDirect(read, modify, appUser, user.username)) as IRoom;
 
-  const shouldSend = await shouldSendMessage(read, persistence, user);
+  const targetRoom = await getDirect({
+    read,
+    modify,
+    appUser,
+    username: user.username,
+  });
+
+  if (!targetRoom) {
+    throw new Error('Failed to get or create direct message room');
+  }
+
+  const shouldSend = await shouldSendMessage({ read, persistence, user });
 
   if (!shouldSend) {
     return '';
   }
 
-  return await sendMessage(modify, targetRoom, appUser, message, blocks);
+  return await sendMessage({
+    modify,
+    room: targetRoom,
+    sender: appUser,
+    message,
+    blocks,
+  });
 }
 
 export function isUserHighHierarchy(user: IUser): boolean {
-  const clearanceList = ['admin', 'owner', 'moderator'];
-  return user.roles.some((role) => clearanceList.includes(role));
+  return user.roles.some((role) =>
+    HIGH_HIERARCHY_ROLES.includes(role as (typeof HIGH_HIERARCHY_ROLES)[number])
+  );
 }

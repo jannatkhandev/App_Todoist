@@ -1,7 +1,6 @@
 import { IModify, IPersistence, IRead } from '@rocket.chat/apps-engine/definition/accessors';
 import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 
-import { TodoistApp } from '../../../TodoistApp';
 import { createTaskModal } from '../../modals/createTaskModal';
 
 export async function task(modify: IModify, context: SlashCommandContext): Promise<void> {
