@@ -44,21 +44,21 @@ export class TodoistCommand implements ISlashCommand {
         await authorize(this.app, read, modify, context.getSender(), persistence);
         break;
       case 'projects':
-        await projects(this.app, read, modify, context, persistence);
-        break;
-      case 'task':
-        await task(this.app, read, modify, context, persistence);
+        await projects(this.app, modify, context);
         break;
       case 'tasks':
-        await tasks(this.app, read, modify, context, persistence);
+        await tasks(this.app, modify, context);
         break;
       case 'sections':
-        await sections(this.app, read, modify, context, persistence);
+        await sections(this.app, modify, context);
         break;
       case 'labels':
-        await labels(this.app, read, modify, context, persistence);
+        await labels(this.app, modify, context);
       case 'shared-labels':
-        await sharedLabels(this.app, read, modify, context, persistence);
+        await sharedLabels(this.app, modify, context);
+        break;
+      case 'task':
+        await task(modify, context);
         break;
       default:
         await this.displayAppHelpMessage(read, modify, context.getSender(), context.getRoom());

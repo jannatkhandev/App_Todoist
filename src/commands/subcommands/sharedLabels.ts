@@ -1,28 +1,16 @@
-import {
-  HttpStatusCode,
-  IModify,
-  IPersistence,
-  IRead,
-} from '@rocket.chat/apps-engine/definition/accessors';
+import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 import { TodoistApp } from '../../../TodoistApp';
 import { MiscEnum } from '../../enums/Misc';
-import {
-  getActionsBlock,
-  getButton,
-  getContextBlock,
-  getSectionBlock,
-} from '../../helpers/blockBuilder';
+import { getActionsBlock, getButton, getSectionBlock } from '../../helpers/blockBuilder';
 import { getSharedLabelsUrl } from '../../helpers/const';
 
 export async function sharedLabels(
   app: TodoistApp,
-  read: IRead,
   modify: IModify,
-  context: SlashCommandContext,
-  persistence: IPersistence
+  context: SlashCommandContext
 ): Promise<void> {
   const user = context.getSender();
   const room = context.getRoom();
@@ -67,7 +55,7 @@ export async function sharedLabels(
 }
 
 async function createSharedLabelSection(labelName: string): Promise<LayoutBlock[]> {
-  const labelNameBlock = getSectionBlock(`${labelName}`);
+  const labelNameBlock = getSectionBlock(labelName);
 
   const renameButton = getButton({
     labelText: MiscEnum.RENAME_SHARED_LABEL_BUTTON,

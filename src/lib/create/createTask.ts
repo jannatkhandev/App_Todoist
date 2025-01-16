@@ -1,7 +1,6 @@
 import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { IRoom } from '@rocket.chat/apps-engine/definition/rooms';
 import { UIKitViewSubmitInteractionContext } from '@rocket.chat/apps-engine/definition/uikit';
-import { IUIKitViewSubmitIncomingInteraction } from '@rocket.chat/apps-engine/definition/uikit/UIKitIncomingInteractionTypes';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
 
 import { TodoistApp } from '../../../TodoistApp';

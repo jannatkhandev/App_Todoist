@@ -1,9 +1,4 @@
-import {
-  HttpStatusCode,
-  IModify,
-  IPersistence,
-  IRead,
-} from '@rocket.chat/apps-engine/definition/accessors';
+import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
@@ -20,10 +15,8 @@ import { ISection } from '../../interfaces/sections';
 
 export async function sections(
   app: TodoistApp,
-  read: IRead,
   modify: IModify,
-  context: SlashCommandContext,
-  persistence: IPersistence
+  context: SlashCommandContext
 ): Promise<void> {
   const user = context.getSender();
   const room = context.getRoom();
@@ -61,7 +54,7 @@ export async function sections(
 }
 
 async function createSectionBlock(section: ISection): Promise<LayoutBlock[]> {
-  const sectionNameBlock = getSectionBlock(`${section.name}`);
+  const sectionNameBlock = getSectionBlock(section.name);
   const sectionContextBlock = getContextBlock(
     `Project ID: ${section.project_id} | Order: ${section.order}`
   );

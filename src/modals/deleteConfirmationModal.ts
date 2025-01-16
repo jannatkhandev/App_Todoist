@@ -21,7 +21,7 @@ export async function deleteConfirmationModal({
   const viewId = ModalsEnum[modalKey] + `#${roomId}`;
 
   const confirmationMessage = getSectionBlock(
-    `Are you sure you want to delete ${itemType}: *${itemName}*?`
+    `Are you sure you want to delete ${itemType}: ${itemName}?`
   );
 
   const [closeButton, submitButton] = await Promise.all([
