@@ -20,7 +20,14 @@ export async function authorize(
     authButton
   );
 
-  await sendDirectMessage(read, modify, user, '', persistence, [textsectionBlock]);
+  await sendDirectMessage({
+    read: read,
+    modify: modify,
+    user: user,
+    message: '',
+    persistence: persistence,
+    blocks: [textsectionBlock],
+  });
 }
 
 function getAuthorizeButton(url: string) {

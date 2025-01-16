@@ -10,7 +10,7 @@ interface ShareItemParams {
   modify: IModify;
   getUrl: (id?: string) => string;
   formatMessage: (response: any) => string;
-  method?: HttpMethod; // Optional - defaults to GET
+  method?: HttpMethod;
 }
 
 export async function shareItem({

@@ -17,22 +17,32 @@ export class ExecuteActionButtonHandler {
   public async run(context: UIKitActionButtonInteractionContext): Promise<IUIKitResponse> {
     const data = context.getInteractionData();
     const { actionId, user, triggerId, room, message } = data;
+    const logger = this.app.getLogger();
+    if (!room) {
+      logger.warn('Room data not present in context.');
+      return context.getInteractionResponder().errorResponse();
+    }
+    logger.debug(
+      `Action ID: ${actionId}, Trigger ID: ${triggerId}, User ID: ${user.id}, Room ID: ${room.id}`
+    );
+
     try {
       switch (actionId) {
         case MiscEnum.CREATE_TASK_FROM_MESSAGE_BUTTON_ACTION_ID:
           const createTaskFromMessageModal = await createTaskModal({
             descriptionText: message?.text,
             projectId: undefined,
-            roomId: room!.id,
+            roomId: room.id,
           });
           await this.modify
             .getUiController()
-            .openSurfaceView(createTaskFromMessageModal, { triggerId }, user);
+            .openSurfaceView(createTaskFromMessageModal, data, user);
           return context.getInteractionResponder().successResponse();
         default:
           break;
       }
     } catch (error) {
+      logger.error(error);
       return context.getInteractionResponder().viewErrorResponse({
         viewId: actionId,
         errors: error,

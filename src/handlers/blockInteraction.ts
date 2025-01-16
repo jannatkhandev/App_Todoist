@@ -23,16 +23,24 @@ export class ExecuteBlockActionHandler {
   public async run(context: UIKitBlockInteractionContext): Promise<IUIKitResponse> {
     const data = context.getInteractionData();
     const { actionId, user, triggerId, room } = data;
+    const logger = this.app.getLogger();
+    if (!room) {
+      logger.warn('Room data not present in context.');
+      return context.getInteractionResponder().errorResponse();
+    }
+    logger.debug(
+      `Action ID: ${actionId}, Trigger ID: ${triggerId}, User ID: ${user.id}, Room ID: ${room.id}`
+    );
     try {
       switch (actionId) {
         case MiscEnum.CREATE_TASK_IN_PROJECT_BUTTON_ACTION_ID:
           const createTaskFromProjectModal = await createTaskModal({
             projectId: data.value,
-            roomId: room!.id,
+            roomId: room.id,
           });
           await this.modify
             .getUiController()
-            .openSurfaceView(createTaskFromProjectModal, { triggerId }, user);
+            .openSurfaceView(createTaskFromProjectModal, data, user);
           return context.getInteractionResponder().successResponse();
         case MiscEnum.SHARE_PROJECT_ACTION_ID:
           await shareProject({ app: this.app, context, modify: this.modify });
@@ -56,15 +64,15 @@ export class ExecuteBlockActionHandler {
           await handleDeleteAction(this.app, context, this.modify);
           return context.getInteractionResponder().successResponse();
         default:
-          break;
+          logger.warn(`Invalid Action ID: ${actionId} received.`);
+          return context.getInteractionResponder().errorResponse();
       }
     } catch (error) {
+      logger.error(error);
       return context.getInteractionResponder().viewErrorResponse({
         viewId: actionId,
         errors: error,
       });
     }
-
-    return context.getInteractionResponder().successResponse();
   }
 }

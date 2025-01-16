@@ -26,10 +26,11 @@ export async function getComments(
   modify: IModify,
   context: UIKitBlockInteractionContext
 ): Promise<void> {
-  const user = context.getInteractionData().user;
-  const room = context.getInteractionData().room;
-  const itemId = context.getInteractionData().value;
-  const blockId = context.getInteractionData().blockId;
+  const data = context.getInteractionData();
+  const user = data.user;
+  const room = data.room;
+  const itemId = data.value;
+  const blockId = data.blockId;
 
   const isProject = blockId.includes('project');
   const url = getCommentsUrl(isProject ? undefined : itemId, isProject ? itemId : undefined);

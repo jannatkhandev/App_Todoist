@@ -36,7 +36,8 @@ export class TodoistApp extends App {
 
     private async authorizationCallback(token: IAuthData, user: IUser, read: IRead, modify: IModify, http: IHttp, persistence: IPersistence) {
         const text = `The authentication process has succeeded! :tada:`;
-        await sendDirectMessage(read, modify, user, text, persistence);
+        await sendDirectMessage({ read: read, modify: modify, user: user, message: text, persistence: persistence });
+
     }
 
     public async onInstall(context: IAppInstallationContext, read: IRead, http: IHttp, persistence: IPersistence, modify: IModify): Promise<void> {
@@ -48,7 +49,7 @@ export class TodoistApp extends App {
 
         const text = `Welcome to the Todoist Rocket.Chat App!\n` + `To start managing your projects, tasks, etc. ` + `You first need to complete the app's setup and then authorize your Todoist account.\n` + `To do so, type  \`/todoist auth\`\n` + `${isUserHighHierarchy(user) ? quickReminder : ''}`;
 
-        await sendDirectMessage(read, modify, user, text, persistence);
+        await sendDirectMessage({ read: read, modify: modify, user: user, message: text, persistence: persistence });
     }
 
     public getOauth2ClientInstance(): IOAuth2Client {

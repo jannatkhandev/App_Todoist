@@ -156,7 +156,7 @@ export async function handleDeleteAction(
       roomId,
     });
 
-    await modify.getUiController().openSurfaceView(modal, { triggerId: data.triggerId }, user);
+    await modify.getUiController().openSurfaceView(modal, data, user);
   } catch (error) {
     const msg = modify
       .getCreator()
