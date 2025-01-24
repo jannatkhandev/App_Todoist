@@ -1,16 +1,16 @@
-import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
+import { IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 import { TodoistApp } from '../../../TodoistApp';
-import { MiscEnum } from '../../enums/Misc';
+import { BlockActionEnum } from '../../enums/BlockAction';
 import {
   getActionsBlock,
   getButton,
   getContextBlock,
   getSectionBlock,
 } from '../../helpers/blockBuilder';
-import { getTasksUrl } from '../../helpers/const';
+import { sendNotification } from '../../helpers/message';
 import { ITask } from '../../interfaces/tasks';
 
 export async function tasks(
@@ -18,39 +18,35 @@ export async function tasks(
   modify: IModify,
   context: SlashCommandContext
 ): Promise<void> {
+  const logger = app.getLogger();
   const user = context.getSender();
   const room = context.getRoom();
+  const taskService = app.getTaskService();
 
-  const response = await app.getHttpHelperInstance().get(user, getTasksUrl());
+  try {
+    const tasks = await taskService.fetch(user);
+    if (tasks.length === 0) {
+      const message = `No tasks found for the user.`;
+      await sendNotification({ modify, user, room, message });
+      return;
+    }
+    const builder = modify.getCreator().startMessage().setRoom(room);
+    const blocks = (await Promise.all(tasks.map(createTaskSection))).reduce(
+      (acc, val) => acc.concat(val),
+      []
+    ) as LayoutBlock[];
 
-  if (response.statusCode !== HttpStatusCode.OK) {
+    builder.setBlocks(blocks);
+    await modify.getNotifier().notifyUser(user, builder.getMessage());
+  } catch (error) {
+    logger.error(`Error fetching tasks: ${error.message}`);
     const msg = modify
       .getCreator()
       .startMessage()
-      .setText(`❗️ Unable to retrieve tasks! \n Error ${JSON.stringify(response)}`)
+      .setText(`❗️ Unable to retrieve tasks! \n Error: ${error.message}`)
       .setRoom(room);
     await modify.getNotifier().notifyUser(user, msg.getMessage());
-    return;
   }
-
-  if (!response.data || response.data.length === 0) {
-    const msg = modify
-      .getCreator()
-      .startMessage()
-      .setText('No tasks found. Create one using the Todoist app or website.')
-      .setRoom(room);
-    await modify.getNotifier().notifyUser(user, msg.getMessage());
-    return;
-  }
-
-  const builder = modify.getCreator().startMessage().setRoom(room);
-  const blocks = (await Promise.all(response.data.map(createTaskSection))).reduce(
-    (acc, val) => acc.concat(val),
-    []
-  ) as LayoutBlock[];
-
-  builder.setBlocks(blocks);
-  await modify.getNotifier().notifyUser(user, builder.getMessage());
 }
 
 async function createTaskSection(task: ITask): Promise<LayoutBlock[]> {
@@ -62,38 +58,38 @@ async function createTaskSection(task: ITask): Promise<LayoutBlock[]> {
   );
 
   const viewButton = getButton({
-    labelText: MiscEnum.VIEW_TASK_BUTTON,
-    blockId: MiscEnum.TASK_ACTIONS_BLOCK,
-    actionId: MiscEnum.VIEW_TASK_ACTION_ID,
+    labelText: BlockActionEnum.VIEW_TASK_BUTTON,
+    blockId: BlockActionEnum.TASK_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.VIEW_TASK_ACTION_ID,
     value: `${task.url}`,
     style: 'success',
     url: `${task.url}`,
   });
 
   const shareButton = getButton({
-    labelText: MiscEnum.SHARE_TASK_BUTTON,
-    blockId: MiscEnum.TASK_ACTIONS_BLOCK,
-    actionId: MiscEnum.SHARE_TASK_ACTION_ID,
+    labelText: BlockActionEnum.SHARE_TASK_BUTTON,
+    blockId: BlockActionEnum.TASK_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.SHARE_TASK_ACTION_ID,
     value: `${task.id}`,
     style: 'primary',
   });
 
   const getCommentsButton = getButton({
-    labelText: MiscEnum.GET_COMMENTS_BUTTON,
-    blockId: MiscEnum.TASK_ACTIONS_BLOCK,
-    actionId: MiscEnum.GET_COMMENTS_ACTION_ID,
+    labelText: BlockActionEnum.GET_COMMENTS_BUTTON,
+    blockId: BlockActionEnum.TASK_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.GET_COMMENTS_ACTION_ID,
     value: `${task.id}`,
   });
 
   const deleteButton = getButton({
-    labelText: MiscEnum.DELETE_TASK_BUTTON,
-    blockId: MiscEnum.TASK_ACTIONS_BLOCK,
-    actionId: MiscEnum.DELETE_TASK_ACTION_ID,
+    labelText: BlockActionEnum.DELETE_TASK_BUTTON,
+    blockId: BlockActionEnum.TASK_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.DELETE_TASK_ACTION_ID,
     value: `${task.id}`,
     style: 'danger',
   });
 
-  const actionBlock = getActionsBlock(MiscEnum.TASK_ACTIONS_BLOCK, [
+  const actionBlock = getActionsBlock(BlockActionEnum.TASK_ACTIONS_BLOCK, [
     viewButton,
     shareButton,
     getCommentsButton,

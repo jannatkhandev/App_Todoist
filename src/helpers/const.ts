@@ -1,9 +1,4 @@
-const ApiBaseUrl: string = 'https://api.todoist.com/rest';
-
-const ApiVersion = {
-  V1: 'v1',
-  V2: 'v2',
-};
+const ApiBaseUrl: string = 'https://api.todoist.com/rest/v2';
 
 const ApiEndpoint = {
   Projects: 'projects',
@@ -24,57 +19,57 @@ const ApiEndpoint = {
 };
 
 export const getProjectsUrl = () => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Projects}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Projects}`;
 };
 
 export const getSectionsUrl = () => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Sections}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Sections}`;
 };
 
 export const getTasksUrl = () => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Tasks}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Tasks}`;
 };
 
 export const getCommentsUrl = (taskId?: string, projectId?: string) => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Comments}${projectId ? `?project_id=${projectId}` : `?task_id=${taskId}`}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Comments}${projectId ? `?project_id=${projectId}` : `?task_id=${taskId}`}`;
 };
 
 export const getCollaboratorsOfProject = (projectId: string) => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.CollaboratorsOf(projectId)}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.CollaboratorsOf(projectId)}`;
 };
 
 export const getProjectUrl = (projectId: string) => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Project(projectId)}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Project(projectId)}`;
 };
 
 export const getSectionUrl = (sectionId: string) => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Section(sectionId)}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Section(sectionId)}`;
 };
 
 export const getTaskUrl = (taskId: string) => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Task(taskId)}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Task(taskId)}`;
 };
 
 export const getCommentUrl = (commentId: string) => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Comment(commentId)}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Comment(commentId)}`;
 };
 
 export const getLabelsUrl = () => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Labels}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Labels}`;
 };
 
 export const getSharedLabelsUrl = (omitPersonal: boolean = false) => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.SharedLabels}${omitPersonal ? '?omit_personal=true' : ''}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.SharedLabels}${omitPersonal ? '?omit_personal=true' : ''}`;
 };
 
 export const getLabelUrl = (labelId: string) => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.Label(labelId)}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.Label(labelId)}`;
 };
 
 export const renameSharedLabelUrl = () => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.RenameSharedLabel}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.RenameSharedLabel}`;
 };
 
 export const removeSharedLabelUrl = () => {
-  return `${ApiBaseUrl}/${ApiVersion.V2}/${ApiEndpoint.RemoveSharedLabel}`;
+  return `${ApiBaseUrl}/${ApiEndpoint.RemoveSharedLabel}`;
 };

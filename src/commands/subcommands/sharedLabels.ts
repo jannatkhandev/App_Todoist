@@ -1,86 +1,77 @@
-import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
+import { IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 import { TodoistApp } from '../../../TodoistApp';
-import { MiscEnum } from '../../enums/Misc';
+import { BlockActionEnum } from '../../enums/BlockAction';
 import { getActionsBlock, getButton, getSectionBlock } from '../../helpers/blockBuilder';
-import { getSharedLabelsUrl } from '../../helpers/const';
+import { sendNotification } from '../../helpers/message';
+import { ILabel } from '../../interfaces/labels';
 
 export async function sharedLabels(
   app: TodoistApp,
   modify: IModify,
   context: SlashCommandContext
 ): Promise<void> {
+  const logger = app.getLogger();
   const user = context.getSender();
   const room = context.getRoom();
+  const sharedLabelService = app.getSharedLabelService();
 
-  const response = await app.getHttpHelperInstance().get(
-    user,
-    getSharedLabelsUrl(true) // true to omit personal labels
-  );
+  try {
+    const labels = await sharedLabelService.fetch(user);
 
-  if (response.statusCode !== HttpStatusCode.OK) {
+    if (labels.length === 0) {
+      const message = `No shared labels found for the user.`;
+      await sendNotification({ modify, user, room, message });
+      return;
+    }
+    const builder = modify.getCreator().startMessage().setRoom(room);
+    const blocks = (await Promise.all(labels.map(createSharedLabelSection))).reduce(
+      (acc, val) => acc.concat(val),
+      []
+    ) as LayoutBlock[];
+
+    builder.setBlocks(blocks);
+    await modify.getNotifier().notifyUser(user, builder.getMessage());
+  } catch (error) {
+    logger.error(`Error fetching shared labels: ${error.message}`);
     const msg = modify
       .getCreator()
       .startMessage()
-      .setText(`❗️ Unable to retrieve shared labels! \n Error ${JSON.stringify(response)}`)
+      .setText(`❗️ Unable to retrieve shared labels! \n Error: ${error.message}`)
       .setRoom(room);
     await modify.getNotifier().notifyUser(user, msg.getMessage());
-    return;
   }
-
-  if (!response.data || response.data.length === 0) {
-    const msg = modify
-      .getCreator()
-      .startMessage()
-      .setText(
-        'No shared labels found. Shared labels appear when collaborators add labels to shared tasks.'
-      )
-      .setRoom(room);
-    await modify.getNotifier().notifyUser(user, msg.getMessage());
-    return;
-  }
-
-  const builder = modify.getCreator().startMessage().setRoom(room);
-  const headerBlock = getSectionBlock('📑 Shared Labels');
-  const labelBlocks = (await Promise.all(response.data.map(createSharedLabelSection))).reduce(
-    (acc, val) => acc.concat(val),
-    []
-  ) as LayoutBlock[];
-  const blocks: LayoutBlock[] = [headerBlock, ...labelBlocks];
-
-  builder.setBlocks(blocks);
-  await modify.getNotifier().notifyUser(user, builder.getMessage());
 }
 
-async function createSharedLabelSection(labelName: string): Promise<LayoutBlock[]> {
-  const labelNameBlock = getSectionBlock(labelName);
+async function createSharedLabelSection(label: ILabel): Promise<LayoutBlock[]> {
+  const labelNameBlock = getSectionBlock(label.name);
 
   const renameButton = getButton({
-    labelText: MiscEnum.RENAME_SHARED_LABEL_BUTTON,
-    blockId: MiscEnum.SHARED_LABEL_ACTIONS_BLOCK,
-    actionId: MiscEnum.RENAME_SHARED_LABEL_ACTION_ID,
-    value: labelName,
+    labelText: BlockActionEnum.RENAME_SHARED_LABEL_BUTTON,
+    blockId: BlockActionEnum.SHARED_LABEL_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.RENAME_SHARED_LABEL_ACTION_ID,
+    value: label.name,
   });
 
   const removeButton = getButton({
-    labelText: MiscEnum.REMOVE_SHARED_LABEL_BUTTON,
-    blockId: MiscEnum.SHARED_LABEL_ACTIONS_BLOCK,
-    actionId: MiscEnum.REMOVE_SHARED_LABEL_ACTION_ID,
-    value: labelName,
+    labelText: BlockActionEnum.REMOVE_SHARED_LABEL_BUTTON,
+    blockId: BlockActionEnum.SHARED_LABEL_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.REMOVE_SHARED_LABEL_ACTION_ID,
+    value: label.name,
     style: 'danger',
   });
 
   const convertButton = getButton({
-    labelText: MiscEnum.CONVERT_TO_PERSONAL_LABEL_BUTTON,
-    blockId: MiscEnum.SHARED_LABEL_ACTIONS_BLOCK,
-    actionId: MiscEnum.CONVERT_TO_PERSONAL_LABEL_ACTION_ID,
-    value: labelName,
+    labelText: BlockActionEnum.CONVERT_TO_PERSONAL_LABEL_BUTTON,
+    blockId: BlockActionEnum.SHARED_LABEL_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.CONVERT_TO_PERSONAL_LABEL_ACTION_ID,
+    value: label.name,
     style: 'primary',
   });
 
-  const actionBlock = getActionsBlock(MiscEnum.SHARED_LABEL_ACTIONS_BLOCK, [
+  const actionBlock = getActionsBlock(BlockActionEnum.SHARED_LABEL_ACTIONS_BLOCK, [
     renameButton,
     removeButton,
     convertButton,

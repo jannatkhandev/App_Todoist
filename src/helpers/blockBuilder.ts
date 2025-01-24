@@ -14,7 +14,6 @@ import {
 
 import { AppEnum } from '../enums/App';
 
-// Interfaces for common parameters
 interface BaseElementParams {
   blockId?: string;
   actionId?: string;

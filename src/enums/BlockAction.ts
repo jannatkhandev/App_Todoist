@@ -1,4 +1,4 @@
-export enum MiscEnum {
+export enum BlockActionEnum {
   GET_SECTIONS_BUTTON = 'Get Sections',
   GET_SECTIONS_ACTION_ID = 'get-sections',
   GET_PROJECTS_BUTTON = 'Get Projects',

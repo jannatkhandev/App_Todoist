@@ -1,11 +1,10 @@
-import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
+import { IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { IRoom } from '@rocket.chat/apps-engine/definition/rooms';
 import { UIKitViewSubmitInteractionContext } from '@rocket.chat/apps-engine/definition/uikit';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
 
 import { TodoistApp } from '../../../TodoistApp';
 import { ModalsEnum } from '../../enums/Modals';
-import { getTasksUrl } from '../../helpers/const';
 
 export async function createTask({
   app,
@@ -35,7 +34,7 @@ export async function createTask({
 
   if (!taskName) {
     const error = 'Task name is missing!';
-    logger.error(error);
+    logger.error(error + ' | TriggerID: ' + data.triggerId);
     const msg = modify
       .getCreator()
       .startMessage()
@@ -44,34 +43,33 @@ export async function createTask({
     await modify.getNotifier().notifyUser(user, msg.getMessage());
   }
 
-  const body = {
+  const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
+
+  const task = {
     content: `${taskName}`,
     ...(description && { description }),
     ...(project_id && { project_id }),
     due_date: taskdueDate
       ? new Date(taskdueDate).toISOString().split('T')[0] // Formatted as YYYY-MM-DD
-      : new Date(Date.now() + 86400000).toISOString().split('T')[0], // Tomorrow's date
+      : tomorrow,
     priority: parseInt(taskPriority),
   };
 
-  const url = getTasksUrl();
-
-  const response = await app.getHttpHelperInstance().post(user, url, { data: body });
-
-  if (response.statusCode === HttpStatusCode.OK) {
+  try {
+    const createdTask = await app.getTaskService().create(user, task);
     const msg = modify
       .getCreator()
       .startMessage()
       .setText(
-        `✅️ Task created successfully! \n Task: [${taskName}](${response.data.url}) | When: ${response.data.due.string}`
+        `✅️ Task created successfully! \n Task: [${taskName}](${createdTask.url}) | When: ${createdTask.due.string}`
       )
       .setRoom(room!);
     await modify.getNotifier().notifyUser(user, msg.getMessage());
-  } else {
+  } catch (error) {
     const msg = modify
       .getCreator()
       .startMessage()
-      .setText(`❗️ Unable to create task! \n Error ${JSON.stringify(response)}`)
+      .setText(`❗️ Unable to create task! \n Error ${error?.memssage}`)
       .setRoom(room!);
     await modify.getNotifier().notifyUser(user, msg.getMessage());
   }

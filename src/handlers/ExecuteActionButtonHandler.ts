@@ -5,7 +5,7 @@ import {
 } from '@rocket.chat/apps-engine/definition/uikit';
 
 import { TodoistApp } from '../../TodoistApp';
-import { MiscEnum } from '../enums/Misc';
+import { BlockActionEnum } from '../enums/BlockAction';
 import { createTaskModal } from '../modals/createTaskModal';
 
 export class ExecuteActionButtonHandler {
@@ -22,13 +22,10 @@ export class ExecuteActionButtonHandler {
       logger.warn('Room data not present in context.');
       return context.getInteractionResponder().errorResponse();
     }
-    logger.debug(
-      `Action ID: ${actionId}, Trigger ID: ${triggerId}, User ID: ${user.id}, Room ID: ${room.id}`
-    );
 
     try {
       switch (actionId) {
-        case MiscEnum.CREATE_TASK_FROM_MESSAGE_BUTTON_ACTION_ID:
+        case BlockActionEnum.CREATE_TASK_FROM_MESSAGE_BUTTON_ACTION_ID:
           const createTaskFromMessageModal = await createTaskModal({
             descriptionText: message?.text,
             projectId: undefined,

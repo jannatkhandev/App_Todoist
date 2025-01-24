@@ -35,6 +35,7 @@ export async function createTaskModal({
     getButton({
       labelText: ModalsEnum.CREATE_TASK_MODAL_SUBMIT_BUTTON_LABEL,
       style: 'success',
+      value: 'submit',
     }),
   ]);
 

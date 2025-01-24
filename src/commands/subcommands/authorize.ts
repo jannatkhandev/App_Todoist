@@ -24,7 +24,6 @@ export async function authorize(
     read: read,
     modify: modify,
     user: user,
-    message: '',
     persistence: persistence,
     blocks: [textsectionBlock],
   });

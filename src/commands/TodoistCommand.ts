@@ -90,7 +90,6 @@ export class TodoistCommand implements ISlashCommand {
 `;
 
     return sendNotification({
-      read: read,
       modify: modify,
       user: user,
       room: room,

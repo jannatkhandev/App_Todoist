@@ -1,16 +1,16 @@
-import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
+import { IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 import { TodoistApp } from '../../../TodoistApp';
-import { MiscEnum } from '../../enums/Misc';
+import { BlockActionEnum } from '../../enums/BlockAction';
 import {
   getActionsBlock,
   getButton,
   getContextBlock,
   getSectionBlock,
 } from '../../helpers/blockBuilder';
-import { getLabelsUrl } from '../../helpers/const';
+import { sendNotification } from '../../helpers/message';
 import { ILabel } from '../../interfaces/labels';
 
 export async function labels(
@@ -18,38 +18,35 @@ export async function labels(
   modify: IModify,
   context: SlashCommandContext
 ): Promise<void> {
+  const logger = app.getLogger();
   const user = context.getSender();
   const room = context.getRoom();
+  const labelService = app.getLabelService();
 
-  const response = await app.getHttpHelperInstance().get(user, getLabelsUrl());
+  try {
+    const labels = await labelService.fetch(user);
+    if (labels.length === 0) {
+      const message = `No labels found for the user.`;
+      await sendNotification({ modify, user, room, message });
+      return;
+    }
+    const builder = modify.getCreator().startMessage().setRoom(room);
+    const blocks = (await Promise.all(labels.map(createLabelSection))).reduce(
+      (acc, val) => acc.concat(val),
+      []
+    ) as LayoutBlock[];
 
-  if (response.statusCode !== HttpStatusCode.OK) {
+    builder.setBlocks(blocks);
+    await modify.getNotifier().notifyUser(user, builder.getMessage());
+  } catch (error) {
+    logger.error(`Error fetching labels: ${error.message}`);
     const msg = modify
       .getCreator()
       .startMessage()
-      .setText(`❗️ Unable to retrieve labels! \n Error ${JSON.stringify(response)}`)
+      .setText(`❗️ Unable to retrieve labels! \n Error: ${error.message}`)
       .setRoom(room);
     await modify.getNotifier().notifyUser(user, msg.getMessage());
-    return;
   }
-
-  if (!response.data || response.data.length === 0) {
-    const msg = modify
-      .getCreator()
-      .startMessage()
-      .setText('No personal labels found. Create one using the Todoist app or website.')
-      .setRoom(room);
-    await modify.getNotifier().notifyUser(user, msg.getMessage());
-    return;
-  }
-
-  const builder = modify.getCreator().startMessage().setRoom(room);
-  const blocks = (await Promise.all(response.data.map(createLabelSection))).reduce(
-    (acc, val) => acc.concat(val),
-    []
-  ) as LayoutBlock[];
-  builder.setBlocks(blocks);
-  await modify.getNotifier().notifyUser(user, builder.getMessage());
 }
 
 async function createLabelSection(label: ILabel): Promise<LayoutBlock[]> {
@@ -60,22 +57,25 @@ async function createLabelSection(label: ILabel): Promise<LayoutBlock[]> {
   );
 
   const shareButton = getButton({
-    labelText: MiscEnum.SHARE_LABEL_BUTTON,
-    blockId: MiscEnum.LABEL_ACTIONS_BLOCK,
-    actionId: MiscEnum.SHARE_LABEL_ACTION_ID,
-    value: `${label.id}`,
+    labelText: BlockActionEnum.SHARE_LABEL_BUTTON,
+    blockId: BlockActionEnum.LABEL_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.SHARE_LABEL_ACTION_ID,
+    value: label.id,
     style: 'primary',
   });
 
   const deleteButton = getButton({
-    labelText: MiscEnum.DELETE_LABEL_BUTTON,
-    blockId: MiscEnum.LABEL_ACTIONS_BLOCK,
-    actionId: MiscEnum.DELETE_LABEL_ACTION_ID,
-    value: `${label.id}`,
+    labelText: BlockActionEnum.DELETE_LABEL_BUTTON,
+    blockId: BlockActionEnum.LABEL_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.DELETE_LABEL_ACTION_ID,
+    value: label.id,
     style: 'danger',
   });
 
-  const actionBlock = getActionsBlock(MiscEnum.LABEL_ACTIONS_BLOCK, [shareButton, deleteButton]);
+  const actionBlock = getActionsBlock(BlockActionEnum.LABEL_ACTIONS_BLOCK, [
+    shareButton,
+    deleteButton,
+  ]);
 
   return [labelNameBlock, labelContextBlock, actionBlock];
 }

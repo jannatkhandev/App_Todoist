@@ -1,16 +1,16 @@
-import { HttpStatusCode, IModify } from '@rocket.chat/apps-engine/definition/accessors';
+import { IModify } from '@rocket.chat/apps-engine/definition/accessors';
 import { SlashCommandContext } from '@rocket.chat/apps-engine/definition/slashcommands';
 import { LayoutBlock } from '@rocket.chat/ui-kit';
 
 import { TodoistApp } from '../../../TodoistApp';
-import { MiscEnum } from '../../enums/Misc';
+import { BlockActionEnum } from '../../enums/BlockAction';
 import {
   getActionsBlock,
   getButton,
   getContextBlock,
   getSectionBlock,
 } from '../../helpers/blockBuilder';
-import { getProjectsUrl } from '../../helpers/const';
+import { sendNotification } from '../../helpers/message';
 import { IProject } from '../../interfaces/projects';
 
 export async function projects(
@@ -18,39 +18,35 @@ export async function projects(
   modify: IModify,
   context: SlashCommandContext
 ): Promise<void> {
+  const logger = app.getLogger();
   const user = context.getSender();
   const room = context.getRoom();
+  const projectService = app.getProjectService();
 
-  const response = await app.getHttpHelperInstance().get(user, getProjectsUrl());
+  try {
+    const projects = await projectService.fetch(user);
+    if (projects.length === 0) {
+      const message = `No projects found for the user.`;
+      await sendNotification({ modify, user, room, message });
+      return;
+    }
+    const builder = modify.getCreator().startMessage().setRoom(room);
+    const blocks = (await Promise.all(projects.map(createProjectSection))).reduce(
+      (acc, val) => acc.concat(val),
+      []
+    ) as LayoutBlock[];
 
-  if (response.statusCode !== HttpStatusCode.OK) {
+    builder.setBlocks(blocks);
+    await modify.getNotifier().notifyUser(user, builder.getMessage());
+  } catch (error) {
+    logger.error(`Error fetching projects: ${error.message}`);
     const msg = modify
       .getCreator()
       .startMessage()
-      .setText(`❗️ Unable to retrieve projects! \n Error ${JSON.stringify(response)}`)
+      .setText(`❗️ Unable to retrieve projects! \n Error: ${error.message}`)
       .setRoom(room);
     await modify.getNotifier().notifyUser(user, msg.getMessage());
-    return;
   }
-
-  if (!response.data || response.data.length === 0) {
-    const msg = modify
-      .getCreator()
-      .startMessage()
-      .setText('No projects found. Create one using the Todoist app or website.')
-      .setRoom(room);
-    await modify.getNotifier().notifyUser(user, msg.getMessage());
-    return;
-  }
-
-  const builder = modify.getCreator().startMessage().setRoom(room);
-  const blocks = (await Promise.all(response.data.map(createProjectSection))).reduce(
-    (acc, val) => acc.concat(val),
-    []
-  ) as LayoutBlock[];
-
-  builder.setBlocks(blocks);
-  await modify.getNotifier().notifyUser(user, builder.getMessage());
 }
 
 async function createProjectSection(project: IProject): Promise<LayoutBlock[]> {
@@ -61,37 +57,37 @@ async function createProjectSection(project: IProject): Promise<LayoutBlock[]> {
   );
 
   const viewProjectButton = getButton({
-    labelText: MiscEnum.VIEW_PROJECT_BUTTON,
-    blockId: MiscEnum.PROJECT_ACTIONS_BLOCK,
-    actionId: MiscEnum.VIEW_PROJECT_ACTION_ID,
+    labelText: BlockActionEnum.VIEW_PROJECT_BUTTON,
+    blockId: BlockActionEnum.PROJECT_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.VIEW_PROJECT_ACTION_ID,
     value: `${project.url}`,
     style: 'success',
     url: `${project.url}`,
   });
 
   const shareProjectButton = getButton({
-    labelText: MiscEnum.SHARE_PROJECT_BUTTON,
-    blockId: MiscEnum.PROJECT_ACTIONS_BLOCK,
-    actionId: MiscEnum.SHARE_PROJECT_ACTION_ID,
+    labelText: BlockActionEnum.SHARE_PROJECT_BUTTON,
+    blockId: BlockActionEnum.PROJECT_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.SHARE_PROJECT_ACTION_ID,
     value: `${project.id}`,
     style: 'primary',
   });
 
   const createTaskInProjectButton = getButton({
-    labelText: MiscEnum.CREATE_TASK_IN_PROJECT_BUTTON,
-    blockId: MiscEnum.PROJECT_ACTIONS_BLOCK,
-    actionId: MiscEnum.CREATE_TASK_IN_PROJECT_BUTTON_ACTION_ID,
+    labelText: BlockActionEnum.CREATE_TASK_IN_PROJECT_BUTTON,
+    blockId: BlockActionEnum.PROJECT_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.CREATE_TASK_IN_PROJECT_BUTTON_ACTION_ID,
     value: `${project.id}`,
   });
 
   const getCommentsButton = getButton({
-    labelText: MiscEnum.GET_COMMENTS_BUTTON,
-    blockId: MiscEnum.PROJECT_ACTIONS_BLOCK,
-    actionId: MiscEnum.GET_COMMENTS_ACTION_ID,
+    labelText: BlockActionEnum.GET_COMMENTS_BUTTON,
+    blockId: BlockActionEnum.PROJECT_ACTIONS_BLOCK,
+    actionId: BlockActionEnum.GET_COMMENTS_ACTION_ID,
     value: `${project.id}`,
   });
 
-  const projectActionBlock = getActionsBlock(MiscEnum.PROJECT_ACTIONS_BLOCK, [
+  const projectActionBlock = getActionsBlock(BlockActionEnum.PROJECT_ACTIONS_BLOCK, [
     viewProjectButton,
     shareProjectButton,
     createTaskInProjectButton,

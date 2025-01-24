@@ -5,24 +5,19 @@ import { ModalsEnum } from '../enums/Modals';
 import { getButton, getSectionBlock } from '../helpers/blockBuilder';
 
 export async function deleteConfirmationModal({
-  itemType,
-  itemName,
   itemId,
   actionId,
   roomId,
 }: {
-  itemType: string;
-  itemName: string;
   itemId: string;
   actionId: string;
   roomId: string;
 }): Promise<IUIKitSurfaceViewParam> {
+  const itemType = actionId.split('delete-')[1];
   const modalKey = `DELETE_${itemType.toUpperCase()}` as keyof typeof ModalsEnum;
   const viewId = ModalsEnum[modalKey] + `#${roomId}`;
 
-  const confirmationMessage = getSectionBlock(
-    `Are you sure you want to delete ${itemType}: ${itemName}?`
-  );
+  const confirmationMessage = getSectionBlock(`Are you sure you want to delete the ${itemType}?`);
 
   const [closeButton, submitButton] = await Promise.all([
     getButton({

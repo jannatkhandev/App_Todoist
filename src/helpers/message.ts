@@ -15,13 +15,12 @@ interface GetDirectParams {
 interface SendMessageParams {
   modify: IModify;
   room: IRoom;
-  sender: IUser;
   message: string;
+  sender?: IUser;
   blocks?: Array<LayoutBlock>;
 }
 
 interface SendNotificationParams {
-  read: IRead;
   modify: IModify;
   user: IUser;
   room: IRoom;
@@ -33,7 +32,7 @@ interface SendDirectMessageParams {
   read: IRead;
   modify: IModify;
   user: IUser;
-  message: string;
+  message?: string;
   persistence: IPersistence;
   blocks?: LayoutBlock[];
 }
@@ -74,18 +73,21 @@ export async function getDirect({
 export async function sendMessage({
   modify,
   room,
-  sender,
   message,
+  sender,
   blocks,
 }: SendMessageParams): Promise<string> {
   const msg = modify
     .getCreator()
     .startMessage()
-    .setSender(sender)
     .setRoom(room)
     .setGroupable(false)
     .setParseUrls(false)
     .setText(message);
+
+  if (sender) {
+    msg.setSender(sender);
+  }
 
   if (blocks) {
     msg.setBlocks(blocks);
@@ -100,28 +102,26 @@ export async function shouldSendMessage(params: NotificationParams): Promise<boo
 }
 
 export async function sendNotification({
-  read,
   modify,
   user,
   room,
   message,
   blocks,
 }: SendNotificationParams): Promise<void> {
-  const appUser = (await read.getUserReader().getAppUser()) as IUser;
-  const msg = modify.getCreator().startMessage().setSender(appUser).setRoom(room).setText(message);
+  const msg = modify.getCreator().startMessage().setRoom(room).setText(message);
 
   if (blocks) {
     msg.setBlocks(blocks);
   }
 
-  return read.getNotifier().notifyUser(user, msg.getMessage());
+  return modify.getNotifier().notifyUser(user, msg.getMessage());
 }
 
 export async function sendDirectMessage({
   read,
   modify,
   user,
-  message,
+  message = '',
   persistence,
   blocks,
 }: SendDirectMessageParams): Promise<string> {

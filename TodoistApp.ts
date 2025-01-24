@@ -7,18 +7,31 @@ import { UIActionButtonContext } from '@rocket.chat/apps-engine/definition/ui';
 import { IUIKitResponse, UIKitActionButtonInteractionContext, UIKitBlockInteractionContext, UIKitViewSubmitInteractionContext } from '@rocket.chat/apps-engine/definition/uikit';
 import { IUser } from '@rocket.chat/apps-engine/definition/users';
 import { TodoistCommand } from './src/commands/TodoistCommand';
-import { MiscEnum } from './src/enums/Misc';
-import { ExecuteActionButtonHandler } from './src/handlers/actionButtonInteraction';
-import { ExecuteBlockActionHandler } from './src/handlers/blockInteraction';
-import { ExecuteViewSubmitHandler } from './src/handlers/viewSubmitInteraction';
+import { BlockActionEnum } from './src/enums/BlockAction';
+import { ExecuteActionButtonHandler } from './src/handlers/ExecuteActionButtonHandler';
+import { ExecuteBlockActionHandler } from './src/handlers/ExecuteBlockActionHandler';
+import { ExecuteViewSubmitHandler } from './src/handlers/ExecuteViewSubmitHandler';
 import { HttpHelper } from './src/helpers/http';
 import { isUserHighHierarchy, sendDirectMessage } from './src/helpers/message';
+import { LabelService } from './src/services/LabelService';
+import { TaskService } from './src/services/TaskService';
+import { ProjectService } from './src/services/ProjectService';
+import { SectionService } from './src/services/SectionService';
+import { SharedLabelService } from './src/services/SharedLabelService';
+import { CommentService } from './src/services/CommentService';
 
 export class TodoistApp extends App {
-    public readonly botUsername: string = 'todoist-app.bot';
     public botUser: IUser;
+    public readonly botUsername: string = 'todoist-app.bot';
     private readonly oauth2ClientInstance: IOAuth2Client;
     private httpHelperInstance: HttpHelper;
+    private labelService: LabelService;
+    private taskService: TaskService;
+    private projectService: ProjectService;
+    private sectionService: SectionService;
+    private sharedLabelService: SharedLabelService;
+    private commentService: CommentService;
+
     private oauth2Config: IOAuth2ClientOptions = {
       alias: 'todoist-app',
       accessTokenUri: 'https://todoist.com/oauth/access_token',
@@ -42,18 +55,55 @@ export class TodoistApp extends App {
 
     public async onInstall(context: IAppInstallationContext, read: IRead, http: IHttp, persistence: IPersistence, modify: IModify): Promise<void> {
         const user = context.user;
-
-        const quickReminder =
-            'Quick reminder: Let your team members know about the Todoist App,\
-                                so everyone will be able to manage their tasks.\n';
-
+        const quickReminder = 'Quick reminder: Let your team members know about the Todoist App, so everyone will be able to manage their tasks.\n';
         const text = `Welcome to the Todoist Rocket.Chat App!\n` + `To start managing your projects, tasks, etc. ` + `You first need to complete the app's setup and then authorize your Todoist account.\n` + `To do so, type  \`/todoist auth\`\n` + `${isUserHighHierarchy(user) ? quickReminder : ''}`;
-
         await sendDirectMessage({ read: read, modify: modify, user: user, message: text, persistence: persistence });
     }
 
     public getOauth2ClientInstance(): IOAuth2Client {
         return this.oauth2ClientInstance;
+    }
+
+    public getLabelService(): LabelService {
+        if (!this.labelService) {
+        this.labelService = new LabelService(this);
+        }
+        return this.labelService;
+    }
+
+    public getTaskService(): TaskService {
+        if (!this.taskService) {
+        this.taskService = new TaskService(this);
+        }
+        return this.taskService;
+    }
+
+    public getProjectService(): ProjectService {
+        if (!this.projectService) {
+        this.projectService = new ProjectService(this);
+        }
+        return this.projectService;
+    }
+
+    public getSectionService(): SectionService {
+        if (!this.sectionService) {
+            this.sectionService = new SectionService(this);
+        }
+        return this.sectionService;
+    }
+    
+    public getSharedLabelService(): SharedLabelService {
+        if (!this.sharedLabelService) {
+            this.sharedLabelService = new SharedLabelService(this);
+        }
+        return this.sharedLabelService;
+    }
+    
+    public getCommentService(): CommentService {
+        if (!this.commentService) {
+            this.commentService = new CommentService(this);
+        }
+        return this.commentService;
     }
 
     public getHttpHelperInstance(): HttpHelper {
@@ -78,14 +128,12 @@ export class TodoistApp extends App {
         return handler.run(context);
     }
 
-
     public async extendConfiguration(configuration: IConfigurationExtend): Promise<void> {    
         await Promise.all([this.getOauth2ClientInstance().setup(configuration), configuration.slashCommands.provideSlashCommand(new TodoistCommand(this))]);
         configuration.ui.registerButton({
-			actionId: MiscEnum.CREATE_TASK_FROM_MESSAGE_BUTTON_ACTION_ID,
-			labelI18n: MiscEnum.CREATE_TASK_FROM_MESSAGE_BUTTON,
+			actionId: BlockActionEnum.CREATE_TASK_FROM_MESSAGE_BUTTON_ACTION_ID,
+			labelI18n: BlockActionEnum.CREATE_TASK_FROM_MESSAGE_BUTTON,
 			context: UIActionButtonContext.MESSAGE_ACTION,
 		});
     }
-
 }
